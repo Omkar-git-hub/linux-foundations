@@ -1,5 +1,3 @@
-# PROJECT_PLAN.md
-
 # Linux Daily Learning Path — Basic to Intermediate
 
 ## Day 1
