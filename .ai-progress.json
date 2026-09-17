@@ -3,9 +3,10 @@
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
-        "Learn Files and Directories"
+        "Learn Files and Directories",
+        "Create Files and Directories Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 3
+    "project_progress": 4
 }
