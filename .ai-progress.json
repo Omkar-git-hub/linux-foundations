@@ -1,9 +1,10 @@
 {
     "current_day": 1,
     "completed_tasks": [
-        "Learn Linux Fundamentals"
+        "Learn Linux Fundamentals",
+        "Create Linux Fundamentals Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 1
+    "project_progress": 2
 }

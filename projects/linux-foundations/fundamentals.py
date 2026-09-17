@@ -1,112 +1,89 @@
 """
-Linux Fundamentals utilities.
+Linux Fundamentals Notes Module.
 
-This module provides simple helper functions that expose basic Linux
-knowledge such as common command names and their short descriptions.
-The functions are deliberately lightweight and rely only on the Python
-standard library so they can be used in educational contexts or unit
-tests without external dependencies.
+This module provides a concise collection of notes covering essential
+Linux concepts. The notes are stored as a dictionary mapping a topic
+title to a short description. Helper functions are provided to retrieve
+the notes programmatically or to display them in a readable format.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
-# Mapping of a few essential Linux commands to a short description.
-_COMMAND_DESCRIPTIONS: Dict[str, str] = {
-    "ls": "List directory contents",
-    "cd": "Change the current directory",
-    "pwd": "Print the current working directory",
-    "mkdir": "Create a new directory",
-    "rm": "Remove files or directories",
-    "cp": "Copy files and directories",
-    "mv": "Move/rename files and directories",
-    "cat": "Concatenate and display file contents",
-    "echo": "Display a line of text",
-    "chmod": "Change file mode (permissions)",
-    "chown": "Change file owner and group",
-    "grep": "Search text using patterns",
-    "find": "Search for files in a directory hierarchy",
-    "tar": "Archive files",
-    "ssh": "Secure Shell remote login",
-    "sudo": "Execute a command as another user, typically root",
-    "apt": "Advanced Package Tool (Debian/Ubuntu package manager)",
-    "yum": "Yellowdog Updater, Modified (RHEL/CentOS package manager)",
-    "systemctl": "Control the systemd system and service manager",
-    "ps": "Report a snapshot of current processes",
-    "top": "Display Linux tasks",
-    "kill": "Send signals to processes",
-    "df": "Report file system disk space usage",
-    "du": "Estimate file space usage",
-    "whoami": "Print effective user ID",
-    "uname": "Print system information",
-    "date": "Display or set the system date and time",
-    "uptime": "Show how long the system has been running",
-    "ifconfig": "Configure network interfaces (deprecated in favor of ip)",
-    "ip": "Show/manipulate routing, devices, policy routing and tunnels",
-    "ping": "Send ICMP ECHO_REQUEST to network hosts",
-    "wget": "Retrieve files from the web",
-    "curl": "Transfer data from or to a server",
-    "nano": "Simple text editor",
-    "vim": "Vi IMproved, a powerful text editor",
-    "git": "Distributed version control system",
-}
+from typing import Dict
 
 
-def list_basic_commands() -> List[str]:
+def get_fundamentals() -> Dict[str, str]:
     """
-    Return a sorted list of basic Linux command names that are covered by
-    this module.
+    Return a dictionary of Linux fundamental topics and their brief notes.
 
     Returns
     -------
-    List[str]
-        Alphabetically sorted command names.
+    Dict[str, str]
+        Mapping where the key is the topic title and the value is a short
+        description of that topic.
     """
-    return sorted(_COMMAND_DESCRIPTIONS.keys())
+    return {
+        "Kernel": (
+            "The core of the operating system, managing hardware, processes, "
+            "memory, and system calls."
+        ),
+        "Shell": (
+            "Command‑line interface that interprets user commands; common shells "
+            "include bash, zsh, and fish."
+        ),
+        "File System Hierarchy": (
+            "Standard directory layout defined by the Filesystem Hierarchy Standard "
+            "(FHS), e.g., /, /bin, /etc, /home, /var, /tmp, /usr."
+        ),
+        "Permissions": (
+            "Read (r), write (w), execute (x) bits for user, group, and others; "
+            "managed with chmod, chown, and chgrp."
+        ),
+        "Process Management": (
+            "Processes identified by PID; commands like ps, top, kill, nice, "
+            "renice, and systemd for services."
+        ),
+        "Package Management": (
+            "Tools to install, update, and remove software; apt (Debian/Ubuntu), "
+            "yum/dnf (RHEL/Fedora), pacman (Arch)."
+        ),
+        "Networking": (
+            "Configuration via ifconfig/ip, netplan, systemd‑networkd; utilities "
+            "such as ping, traceroute, ssh, and netstat."
+        ),
+        "System Logging": (
+            "Logs stored in /var/log; managed by syslog or journald; view with "
+            "journalctl."
+        ),
+        "Boot Process": (
+            "BIOS/UEFI → bootloader (GRUB) → kernel → init system (systemd) → "
+            "services."
+        ),
+        "Users and Groups": (
+            "User accounts in /etc/passwd, groups in /etc/group; manage with "
+            "useradd, groupadd, and passwd."
+        ),
+    }
 
 
-def command_description(command: str) -> Optional[str]:
+def format_fundamentals() -> str:
     """
-    Retrieve a short description for a given Linux command.
-
-    Parameters
-    ----------
-    command : str
-        The command name (e.g., ``'ls'``). Case‑sensitive; the keys in the
-        internal dictionary are lower‑case.
+    Produce a formatted multi‑line string of all Linux fundamentals notes.
 
     Returns
     -------
-    Optional[str]
-        The description if the command is known, otherwise ``None``.
+    str
+        Human‑readable representation of the notes, suitable for printing.
     """
-    return _COMMAND_DESCRIPTIONS.get(command)
+    notes = get_fundamentals()
+    lines = ["Linux Fundamentals:\n"]
+    for title, content in notes.items():
+        lines.append(f"{title}:\n    {content}\n")
+    return "\n".join(lines)
 
 
-def is_absolute_path(path: str) -> bool:
+def print_fundamentals() -> None:
     """
-    Determine whether a given path string is an absolute Linux path.
-
-    An absolute path in Linux starts with the forward slash ``'/'``.
-    This function does not perform any filesystem checks; it only
-    analyses the string format.
-
-    Parameters
-    ----------
-    path : str
-        Path string to evaluate.
-
-    Returns
-    -------
-    bool
-        ``True`` if the path is absolute, ``False`` otherwise.
+    Print the formatted Linux fundamentals notes to standard output.
     """
-    return isinstance(path, str) and path.startswith("/")
-
-
-__all__ = [
-    "list_basic_commands",
-    "command_description",
-    "is_absolute_path",
-]
+    print(format_fundamentals())
