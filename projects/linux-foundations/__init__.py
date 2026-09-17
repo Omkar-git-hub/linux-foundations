@@ -1,32 +1,21 @@
 """
-Linux Foundations Package
+Linux Foundations package.
 
-Provides utilities and information related to fundamental Linux concepts.
+Exports the public file‑handling utilities for convenient import:
+
+    from projects.linux_foundations import list_files, read_file, write_file
 """
 
-from __future__ import annotations
+from .files import (
+    ensure_dir_exists,
+    list_files,
+    read_file,
+    write_file,
+)
 
-__all__: list[str] = ["get_linux_fundamentals"]
-
-
-def get_linux_fundamentals() -> list[str]:
-    """
-    Return a list of core Linux fundamentals topics.
-
-    Returns
-    -------
-    list of str
-        Topics that cover essential Linux knowledge.
-    """
-    return [
-        "File system hierarchy",
-        "Permissions and ownership",
-        "Process management",
-        "Package management",
-        "Shell basics",
-        "Networking basics",
-        "User and group management",
-        "System logging",
-        "System services (systemd)",
-        "Security basics",
-    ]
+__all__ = [
+    "ensure_dir_exists",
+    "list_files",
+    "read_file",
+    "write_file",
+]
