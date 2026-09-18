@@ -5,9 +5,10 @@
         "Create Linux Fundamentals Notes",
         "Learn Files and Directories",
         "Create Files and Directories Notes",
-        "Learn Linux File Permissions"
+        "Learn Linux File Permissions",
+        "Create File Permissions Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 5
+    "project_progress": 6
 }

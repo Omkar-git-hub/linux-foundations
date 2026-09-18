@@ -1,104 +1,149 @@
 """
-Notes on working with files and directories.
+File Permissions Notes Module.
 
-This module provides a simple utility to retrieve a multi‑line string
-containing best‑practice notes for common file and directory operations
-in Python. The notes are intended for educational purposes and can be
-used by other parts of the project or displayed in documentation tools.
+This module provides human‑readable notes and utilities related to Unix
+file permission concepts. It is intended for educational purposes and can
+be imported by other parts of the ``linux-foundations`` package.
 
-Typical usage
--------------
->>> from projects.linux_foundations.notes import get_notes
->>> print(get_notes())
+Typical usage:
+
+    from projects.linux_foundations.notes import file_permissions_notes
+
+    print(file_permissions_notes())
 """
 
 from __future__ import annotations
 
-__all__: list[str] = ["get_notes"]
+import stat
+from typing import List
 
 
-def get_notes() -> str:
+def _octal_permission_string(mode: int) -> str:
     """
-    Return a formatted string with notes about handling files and directories.
+    Convert a permission ``mode`` integer to a zero‑padded octal string
+    (e.g. ``0o755``).
 
-    The notes cover:
-
-    * Opening files with ``with`` statements to ensure proper closure.
-    * Using ``pathlib.Path`` for path manipulations.
-    * Creating directories safely with ``Path.mkdir(parents=True, exist_ok=True)``.
-    * Reading and writing text versus binary data.
-    * Common pitfalls such as forgetting to close files or handling
-      ``FileNotFoundError`` and ``PermissionError``.
-    * Using ``shutil`` for high‑level operations like copying or removing
-      entire directory trees.
+    Parameters
+    ----------
+    mode: int
+        The integer mode as returned by ``os.stat`` or similar.
 
     Returns
     -------
     str
-        The multi‑line notes string.
+        Octal representation of the permission bits.
     """
-    notes = """
-File and Directory Handling Notes
-=================================
+    # Mask only the permission bits (owner, group, others)
+    perm_bits = mode & 0o777
+    return f"0o{perm_bits:03o}"
 
-1. Use ``pathlib`` over ``os.path``:
-   - ``Path`` objects provide methods like ``read_text()``, ``write_text()``,
-     ``iterdir()``, and ``glob()``.
-   - Example:
-     >>> from pathlib import Path
-     >>> p = Path('example.txt')
-     >>> p.write_text('Hello, world!')
-     >>> content = p.read_text()
 
-2. Always open files using a context manager:
-   - Guarantees the file is closed even if an exception occurs.
-   - Example:
-     >>> with open('data.bin', 'rb') as f:
-     ...     data = f.read()
+def _symbolic_permission_string(mode: int) -> str:
+    """
+    Convert a permission ``mode`` integer to the symbolic representation
+    used by ``ls -l`` (e.g. ``rwxr-xr-x``).
 
-3. Creating directories:
-   - ``Path.mkdir(parents=True, exist_ok=True)`` creates all missing parents
-     and does not raise an error if the directory already exists.
-   - Example:
-     >>> Path('logs/2024/09').mkdir(parents=True, exist_ok=True)
+    Parameters
+    ----------
+    mode: int
+        The integer mode as returned by ``os.stat`` or similar.
 
-4. Deleting files and directories:
-   - Use ``Path.unlink()`` for files.
-   - Use ``shutil.rmtree()`` for directories with contents.
-   - Example:
-     >>> import shutil
-     >>> shutil.rmtree('old_folder')
+    Returns
+    -------
+    str
+        Symbolic permission string.
+    """
+    symbols = [
+        (stat.S_IRUSR, "r"),
+        (stat.S_IWUSR, "w"),
+        (stat.S_IXUSR, "x"),
+        (stat.S_IRGRP, "r"),
+        (stat.S_IWGRP, "w"),
+        (stat.S_IXGRP, "x"),
+        (stat.S_IROTH, "r"),
+        (stat.S_IWOTH, "w"),
+        (stat.S_IXOTH, "x"),
+    ]
 
-5. Copying files and directories:
-   - ``shutil.copy2(src, dst)`` preserves metadata.
-   - ``shutil.copytree(src, dst)`` copies an entire directory tree.
-   - Example:
-     >>> shutil.copy2('config.yaml', 'backup/config.yaml')
+    result: List[str] = []
+    for flag, char in symbols:
+        result.append(char if mode & flag else "-")
+    return "".join(result)
 
-6. Handling errors:
-   - Catch ``FileNotFoundError`` when a path may not exist.
-   - Catch ``PermissionError`` when lacking access rights.
-   - Example:
-     >>> try:
-     ...     Path('secret.txt').read_text()
-     ... except FileNotFoundError:
-     ...     print('File does not exist')
-     ... except PermissionError:
-     ...     print('Insufficient permissions')
 
-7. Working with binary data:
-   - Open files with ``'rb'`` or ``'wb'`` modes.
-   - Use ``bytes`` objects for manipulation.
-   - Example:
-     >>> with open('image.png', 'rb') as img:
-     ...     raw = img.read()
+def file_permissions_notes() -> str:
+    """
+    Return a detailed multi‑line note describing Unix file permission
+    concepts, including numeric (octal) and symbolic representations,
+    special bits, and common usage patterns.
 
-8. Temporary files and directories:
-   - ``tempfile.NamedTemporaryFile`` and ``tempfile.TemporaryDirectory``
-     provide safe, auto‑cleaned resources.
-   - Example:
-     >>> import tempfile
-     >>> with tempfile.TemporaryDirectory() as tmpdir:
-     ...     Path(tmpdir, 'temp.txt').write_text('temp data')
-"""
-    return notes.strip()
+    The note is formatted for easy printing or inclusion in documentation.
+
+    Returns
+    -------
+    str
+        The permission notes.
+    """
+    notes = [
+        "Unix File Permission Overview",
+        "-----------------------------",
+        "",
+        "Each file has three sets of permission bits:",
+        "  * Owner (user)   – what the file's owner can do",
+        "  * Group          – what users in the file's group can do",
+        "  * Others         – what everyone else can do",
+        "",
+        "For each set there are three possible actions:",
+        "  * Read    (r) – permission to read the file or list a directory",
+        "  * Write   (w) – permission to modify the file or create/delete entries",
+        "  * Execute (x) – permission to run a file as a program or traverse a directory",
+        "",
+        "These nine bits are commonly expressed in two ways:",
+        "",
+        "1. Symbolic notation (as shown by ``ls -l``):",
+        "   Example: rwxr-xr--",
+        "   This string is built from the three groups in order:",
+        "   owner  group  others",
+        "",
+        "2. Octal (numeric) notation:",
+        "   Each group of three bits is interpreted as an octal digit (0‑7).",
+        "   Example: 0o754",
+        "",
+        "Octal calculation:",
+        "   read  = 4, write = 2, execute = 1",
+        "   Sum the values for each group:",
+        "     owner  = 4+2+1 = 7",
+        "     group  = 4+0+1 = 5",
+        "     others = 4+0+0 = 4",
+        "",
+        "Special permission bits (setuid, setgid, sticky):",
+        "   * setuid (4xxx) – execute with the file owner's privileges",
+        "   * setgid (2xxx) – execute with the file group's privileges",
+        "   * sticky (1xxx) – restrict deletion within a directory",
+        "",
+        "Common commands:",
+        "   chmod 755 file   – rwxr-xr-x (owner full, group/others read/execute)",
+        "   chmod u+x file   – add execute permission for the owner",
+        "   chmod g-w file   – remove write permission from the group",
+        "   chmod 1777 /tmp  – drwxrwxrwt (sticky bit on /tmp)",
+        "",
+        "Programmatic access (Python example):",
+        "   >>> import os, stat",
+        "   >>> st = os.stat('some_file')",
+        "   >>> mode = st.st_mode",
+        "   >>> octal = _octal_permission_string(mode)",
+        "   >>> symbolic = _symbolic_permission_string(mode)",
+        "   >>> print(octal, symbolic)",
+        "",
+        "Understanding these representations helps when managing file security,",
+        "debugging permission errors, and writing scripts that manipulate",
+        "filesystem objects.",
+    ]
+    return "\n".join(notes)
+
+
+__all__ = [
+    "file_permissions_notes",
+    "_octal_permission_string",
+    "_symbolic_permission_string",
+]
