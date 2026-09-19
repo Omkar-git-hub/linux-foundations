@@ -7,9 +7,10 @@
         "Create Files and Directories Notes",
         "Learn Linux File Permissions",
         "Create File Permissions Notes",
-        "Learn Users, Groups and sudo"
+        "Learn Users, Groups and sudo",
+        "Create Users, Groups and sudo Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 7
+    "project_progress": 8
 }
