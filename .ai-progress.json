@@ -1,5 +1,5 @@
 {
-    "current_day": 4,
+    "current_day": 5,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -8,9 +8,10 @@
         "Learn Linux File Permissions",
         "Create File Permissions Notes",
         "Learn Users, Groups and sudo",
-        "Create Users, Groups and sudo Notes"
+        "Create Users, Groups and sudo Notes",
+        "Learn Linux Processes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 8
+    "project_progress": 9
 }

@@ -1,21 +1,7 @@
 """
-Linux Foundations package.
-
-Exports the public file‑handling utilities for convenient import:
-
-    from projects.linux_foundations import list_files, read_file, write_file
+Top‑level package for the *linux‑foundations* educational modules.
 """
 
-from .files import (
-    ensure_dir_exists,
-    list_files,
-    read_file,
-    write_file,
-)
+from .processes import list_processes  # re‑export for convenient access
 
-__all__ = [
-    "ensure_dir_exists",
-    "list_files",
-    "read_file",
-    "write_file",
-]
+__all__ = ["list_processes"]
