@@ -10,9 +10,10 @@
         "Learn Users, Groups and sudo",
         "Create Users, Groups and sudo Notes",
         "Learn Linux Processes",
-        "Create Processes Notes"
+        "Create Processes Notes",
+        "Learn Standard Input, Output and Error"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 10
+    "project_progress": 11
 }
