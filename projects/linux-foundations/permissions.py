@@ -1,91 +1,147 @@
 """
-Utility functions for inspecting Linux file permissions.
+permissions.py
 
-This module provides helpers to retrieve the symbolic and octal
-representations of a file's permission bits using the standard
-library ``os`` and ``stat`` modules.
+Utility functions for inspecting Linux users, groups, and sudo privileges.
+
+This module provides a small, pure‑Python API built on the standard
+library ``pwd`` and ``grp`` modules.  The functions are deliberately
+simple and have no external side‑effects, making them easy to test.
 
 Typical usage::
 
-    from projects.linux_foundations.permissions import (
-        get_permission_string,
-        get_octal_permission,
+    from linux_foundations.permissions import (
+        list_users,
+        list_groups,
+        get_user_groups,
+        is_user_sudo,
     )
 
-    perms = get_permission_string("/etc/passwd")   # e.g. "rw-r--r--"
-    octal = get_octal_permission("/etc/passwd")   # e.g. "644"
+    all_users = list_users()
+    admin_groups = get_user_groups('root')
+    has_sudo = is_user_sudo('alice')
 """
 
 from __future__ import annotations
 
-import os
-import stat
-from typing import Tuple
-
-__all__: Tuple[str, ...] = (
-    "get_permission_string",
-    "get_octal_permission",
-)
+import pwd
+import grp
+from typing import List
 
 
-def _mode_to_symbols(mode: int) -> str:
+def list_users() -> List[str]:
     """
-    Convert a permission ``mode`` (the lower 9 bits) to a symbolic string.
+    Return a sorted list of all usernames present on the system.
 
-    The returned string is nine characters long, representing the
-    user, group and others permissions in the order ``rwxrwxrwx``.
-    If a permission bit is not set, the corresponding character is ``-``.
-    """
-    symbols = []
-    # Owner permissions
-    symbols.append("r" if mode & stat.S_IRUSR else "-")
-    symbols.append("w" if mode & stat.S_IWUSR else "-")
-    symbols.append("x" if mode & stat.S_IXUSR else "-")
-    # Group permissions
-    symbols.append("r" if mode & stat.S_IRGRP else "-")
-    symbols.append("w" if mode & stat.S_IWGRP else "-")
-    symbols.append("x" if mode & stat.S_IXGRP else "-")
-    # Others permissions
-    symbols.append("r" if mode & stat.S_IROTH else "-")
-    symbols.append("w" if mode & stat.S_IWOTH else "-")
-    symbols.append("x" if mode & stat.S_IXOTH else "-")
-    return "".join(symbols)
+    The function reads the password database via :mod:`pwd` and extracts the
+    ``pw_name`` attribute from each entry.
 
-
-def get_permission_string(path: str) -> str:
-    """
-    Return the symbolic permission string for *path*.
-
-    The function follows symbolic links (i.e., it uses ``os.stat`` rather
-    than ``os.lstat``).  If the file does not exist or cannot be accessed,
-    ``OSError`` (or a subclass) will be raised, matching the behaviour of
-    ``os.stat``.
-
-    Example
+    Returns
     -------
-    >>> get_permission_string("/tmp")
-    'rwxrwxrwt'
+    List[str]
+        Sorted usernames.
     """
-    st = os.stat(path)
-    # Mask to the permission bits (lower 9 bits)
-    mode = st.st_mode & 0o777
-    return _mode_to_symbols(mode)
+    users = [entry.pw_name for entry in pwd.getpwall()]
+    return sorted(users)
 
 
-def get_octal_permission(path: str) -> str:
+def list_groups() -> List[str]:
     """
-    Return the octal permission representation for *path* as a zero‑padded
-    three‑digit string (e.g., ``"644"``).
+    Return a sorted list of all group names present on the system.
 
-    This is a thin wrapper around :func:`get_permission_string` that extracts
-    the numeric value from the file's mode.
+    The function reads the group database via :mod:`grp` and extracts the
+    ``gr_name`` attribute from each entry.
 
-    Example
+    Returns
     -------
-    >>> get_octal_permission("/etc/passwd")
-    '644'
+    List[str]
+        Sorted group names.
     """
-    st = os.stat(path)
-    mode = st.st_mode & 0o777
-    # Format as three octal digits, zero‑filled
-    return f"{mode:o}".zfill(3)
+    groups = [entry.gr_name for entry in grp.getgrall()]
+    return sorted(groups)
+
+
+def get_user_groups(username: str) -> List[str]:
+    """
+    Return a list of groups that *username* belongs to.
+
+    The primary group (as defined by the user's ``pw_gid``) is always
+    included, followed by any supplementary groups where the user appears
+    in the group's member list.
+
+    Parameters
+    ----------
+    username : str
+        The login name to query.
+
+    Returns
+    -------
+    List[str]
+        Sorted group names for the user.
+
+    Raises
+    ------
+    KeyError
+        If *username* does not exist in the password database.
+    """
+    try:
+        pw_entry = pwd.getpwnam(username)
+    except KeyError as exc:
+        raise KeyError(f"User '{username}' not found") from exc
+
+    primary_gid = pw_entry.pw_gid
+    groups = {grp.getgrgid(primary_gid).gr_name}
+
+    for grp_entry in grp.getgrall():
+        if username in grp_entry.gr_mem:
+            groups.add(grp_entry.gr_name)
+
+    return sorted(groups)
+
+
+def is_user_sudo(username: str) -> bool:
+    """
+    Determine whether *username* has sudo privileges.
+
+    The heuristic used is:
+
+    1. The user is ``root`` (UID 0) – always has full privileges.
+    2. The user belongs to a group named ``sudo`` or ``wheel`` – the
+       conventional groups granting sudo rights on many distributions.
+
+    The function does **not** invoke ``sudo`` or inspect the
+    ``/etc/sudoers`` file; it only checks group membership, which is
+    sufficient for the educational purposes of this repository.
+
+    Parameters
+    ----------
+    username : str
+        The login name to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if the user is considered to have sudo rights, ``False`` otherwise.
+
+    Raises
+    ------
+    KeyError
+        If *username* does not exist.
+    """
+    try:
+        pw_entry = pwd.getpwnam(username)
+    except KeyError as exc:
+        raise KeyError(f"User '{username}' not found") from exc
+
+    if pw_entry.pw_uid == 0:
+        return True
+
+    user_groups = set(get_user_groups(username))
+    return bool(user_groups.intersection({"sudo", "wheel"}))
+
+
+__all__ = [
+    "list_users",
+    "list_groups",
+    "get_user_groups",
+    "is_user_sudo",
+]

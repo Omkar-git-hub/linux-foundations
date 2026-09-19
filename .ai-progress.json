@@ -1,14 +1,15 @@
 {
-    "current_day": 3,
+    "current_day": 4,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
         "Learn Files and Directories",
         "Create Files and Directories Notes",
         "Learn Linux File Permissions",
-        "Create File Permissions Notes"
+        "Create File Permissions Notes",
+        "Learn Users, Groups and sudo"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 6
+    "project_progress": 7
 }
