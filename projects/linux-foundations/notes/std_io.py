@@ -1,145 +1,93 @@
 """
-Standard Input, Output, and Error utilities.
+Standard I/O utilities for educational notes.
 
-This module provides simple helper functions that demonstrate reading from
-standard input and writing to standard output and standard error.  The
-functions are deliberately small so they can be used in teaching examples
-or unit tests without pulling in heavy dependencies.
+This module provides thin wrappers around the three primary streams
+``sys.stdin``, ``sys.stdout`` and ``sys.stderr``.  The functions are
+intentionally simple – they merely demonstrate how to interact with the
+streams without adding extra behaviour such as logging or colourised
+output.
 
-Functions
----------
-read_line(prompt: str = "") -> str
-    Read a line from ``sys.stdin`` (using ``input``) and return it.
+Typical usage::
 
-write_stdout(message: str, end: str = \"\\n\") -> None
-    Write *message* to ``sys.stdout`` using the provided *end* string.
+    from projects.linux_foundations.notes import std_io
 
-write_stderr(message: str, end: str = \"\\n\") -> None
-    Write *message* to ``sys.stderr`` using the provided *end* string.
+    # Read a line from the user
+    name = std_io.read_input("Enter your name: ")
 
-echo_input(prompt: str = \"\") -> None
-    Read a line from standard input and immediately echo it to standard
-    output.  This is a tiny wrapper around :func:`read_line` and
-    :func:`write_stdout`.
+    # Write a normal message
+    std_io.write_output(f"Hello, {name}!")
 
-error_on_empty(prompt: str = \"\") -> None
-    Read a line from standard input; if the line is empty (after stripping
-    whitespace) write an error message to standard error, otherwise write
-    the line to standard output.
+    # Write an error message
+    std_io.write_error("Something went wrong")
 """
 
 from __future__ import annotations
 
 import sys
-from typing import Callable
+from typing import Any
 
 
-def read_line(prompt: str = "") -> str:
+def read_input(prompt: str | None = None) -> str:
     """
-    Read a line from standard input.
+    Read a line from ``sys.stdin``.
 
     Parameters
     ----------
-    prompt: str, optional
-        Prompt displayed to the user.  Defaults to an empty string.
+    prompt:
+        Optional text displayed to the user before reading.  If ``None`` the
+        prompt is omitted.  The prompt is written to ``sys.stdout`` and
+        flushed so that it appears before the user can type.
 
     Returns
     -------
     str
-        The line entered by the user, without the trailing newline.
+        The line entered by the user, **without** the trailing newline.
     """
-    return input(prompt)
+    if prompt is not None:
+        # ``print`` writes to ``sys.stdout`` by default; we use it for the
+        # prompt to keep behaviour consistent with the built‑in ``input``.
+        print(prompt, end="", flush=True)
+    # ``sys.stdin.readline`` returns the line including the newline.
+    line = sys.stdin.readline()
+    # Strip only the trailing newline; other whitespace is preserved.
+    return line.rstrip("\n")
 
 
-def write_stdout(message: str, end: str = "\n") -> None:
+def write_output(message: Any, *, end: str = "\n", flush: bool = False) -> None:
     """
-    Write *message* to standard output.
+    Write *message* to ``sys.stdout``.
 
     Parameters
     ----------
-    message: str
-        Text to write.
-    end: str, optional
+    message:
+        Anything that can be converted to ``str`` – the same contract as
+        ``print``.
+    end:
         String appended after the message.  Defaults to a newline.
+    flush:
+        If ``True`` the stream is flushed immediately.
     """
-    sys.stdout.write(message + end)
-    sys.stdout.flush()
+    print(message, end=end, file=sys.stdout, flush=flush)
 
 
-def write_stderr(message: str, end: str = "\n") -> None:
+def write_error(message: Any, *, end: str = "\n", flush: bool = False) -> None:
     """
-    Write *message* to standard error.
+    Write *message* to ``sys.stderr``.
 
     Parameters
     ----------
-    message: str
-        Text to write.
-    end: str, optional
+    message:
+        Anything that can be converted to ``str``.
+    end:
         String appended after the message.  Defaults to a newline.
+    flush:
+        If ``True`` the stream is flushed immediately.
     """
-    sys.stderr.write(message + end)
-    sys.stderr.flush()
-
-
-def _process_input(
-    prompt: str,
-    on_success: Callable[[str], None],
-    on_failure: Callable[[str], None] | None = None,
-) -> None:
-    """
-    Internal helper that reads a line and dispatches to callbacks.
-
-    Parameters
-    ----------
-    prompt: str
-        Prompt shown to the user.
-    on_success: Callable[[str], None]
-        Called with the stripped line when the line is non‑empty.
-    on_failure: Callable[[str], None] | None, optional
-        Called with the original line when the line is empty.  If ``None``,
-        nothing is written.
-    """
-    line = read_line(prompt)
-    stripped = line.strip()
-    if stripped:
-        on_success(stripped)
-    elif on_failure is not None:
-        on_failure(line)
-
-
-def echo_input(prompt: str = "") -> None:
-    """
-    Read a line from standard input and echo it to standard output.
-
-    Parameters
-    ----------
-    prompt: str, optional
-        Prompt displayed to the user.
-    """
-    _process_input(prompt, on_success=lambda txt: write_stdout(txt))
-
-
-def error_on_empty(prompt: str = "") -> None:
-    """
-    Read a line from standard input; if the line is empty, write an error
-    message to standard error, otherwise echo the line to standard output.
-
-    Parameters
-    ----------
-    prompt: str, optional
-        Prompt displayed to the user.
-    """
-    _process_input(
-        prompt,
-        on_success=lambda txt: write_stdout(txt),
-        on_failure=lambda _: write_stderr("Error: empty input"),
-    )
+    print(message, end=end, file=sys.stderr, flush=flush)
 
 
 __all__ = [
-    "read_line",
-    "write_stdout",
-    "write_stderr",
-    "echo_input",
-    "error_on_empty",
+    "read_input",
+    "write_output",
+    "write_error",
 ]

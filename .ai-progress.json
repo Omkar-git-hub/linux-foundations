@@ -11,9 +11,10 @@
         "Create Users, Groups and sudo Notes",
         "Learn Linux Processes",
         "Create Processes Notes",
-        "Learn Standard Input, Output and Error"
+        "Learn Standard Input, Output and Error",
+        "Create stdin stdout stderr Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 11
+    "project_progress": 12
 }
