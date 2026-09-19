@@ -9,9 +9,10 @@
         "Create File Permissions Notes",
         "Learn Users, Groups and sudo",
         "Create Users, Groups and sudo Notes",
-        "Learn Linux Processes"
+        "Learn Linux Processes",
+        "Create Processes Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 9
+    "project_progress": 10
 }
