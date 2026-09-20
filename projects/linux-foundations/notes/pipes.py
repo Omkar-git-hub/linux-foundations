@@ -1,135 +1,140 @@
 """
-Utility functions for demonstrating Unix pipes and command chaining using the
-standard library ``subprocess`` module.
+pipes.py – Utilities and notes for demonstrating Unix pipes and command chaining.
 
-The functions are intentionally simple and are meant for educational purposes
-in the *Day 7 – Learn Pipes and Command Chaining* lesson.
+This module provides small helper functions that can be used in teaching
+materials or interactive sessions to illustrate how pipelines work at the
+process level.  The functions are deliberately lightweight and rely only on
+the Python standard library.
+
+Typical usage
+-------------
+
+>>> from projects.linux_foundations.notes.pipes import run_pipe, run_chain
+>>> # Simple pipeline equivalent to: echo "hello" | tr a-z A-Z
+>>> run_pipe([["echo", "hello"], ["tr", "a-z", "A-Z"]])
+'HELLO\\n'
+
+>>> # Command chaining (sequential execution, not piped)
+>>> run_chain([["date"], ["whoami"]])
+[(0, 'Mon Sep 30 12:34:56 UTC 2024\\n', ''), (0, 'alice\\n', '')]
 """
 
 from __future__ import annotations
 
 import subprocess
-from typing import List
+from typing import List, Sequence, Tuple
 
 
-def run_pipeline(commands: List[List[str]], capture_stderr: bool = False) -> str:
-    """
-    Execute a series of commands connected by Unix pipes.
-
-    Parameters
-    ----------
-    commands:
-        A list where each element is a command represented as a list of strings,
-        e.g. ``[['echo', 'hello'], ['grep', 'h']]``.
-    capture_stderr:
-        If ``True`` the standard error of the *last* command is appended to the
-        returned output. Errors from intermediate commands are ignored for
-        simplicity.
-
-    Returns
-    -------
-    str
-        The decoded standard output of the final command in the pipeline.
+def _validate_commands(commands: Sequence[Sequence[str]]) -> None:
+    """Validate that *commands* is a non‑empty sequence of non‑empty command lists.
 
     Raises
     ------
     ValueError
-        If ``commands`` is empty.
-    subprocess.CalledProcessError
-        If the final command exits with a non‑zero status and ``check=True`` is
-        desired.  The implementation currently does not raise on intermediate
-        failures; they are allowed to propagate naturally.
+        If *commands* is empty or any individual command is empty.
     """
     if not commands:
-        raise ValueError("At least one command must be supplied to run_pipeline")
-
-    processes: List[subprocess.Popen] = []
-    previous_proc: subprocess.Popen | None = None
-
+        raise ValueError("At least one command must be provided.")
     for i, cmd in enumerate(commands):
-        # The stdin of the current process is the stdout of the previous one,
-        # unless this is the first command.
-        stdin = previous_proc.stdout if previous_proc else None
-
-        # For the last command we may want to capture stderr based on the flag.
-        stderr = subprocess.PIPE if (i == len(commands) - 1 and capture_stderr) else subprocess.DEVNULL
-
-        proc = subprocess.Popen(
-            cmd,
-            stdin=stdin,
-            stdout=subprocess.PIPE,
-            stderr=stderr,
-            text=True,
-        )
-
-        # Close the stdout of the previous process in the parent so that the
-        # pipe is properly broken when the child finishes.
-        if previous_proc:
-            previous_proc.stdout.close()  # type: ignore[assignment]
-
-        processes.append(proc)
-        previous_proc = proc
-
-    # ``communicate`` on the last process retrieves its output (and optional stderr).
-    final_stdout, final_stderr = processes[-1].communicate()
-
-    # Ensure all earlier processes have terminated.
-    for proc in processes[:-1]:
-        proc.wait()
-
-    if capture_stderr and final_stderr:
-        return final_stdout + final_stderr
-    return final_stdout
+        if not cmd:
+            raise ValueError(f"Command at position {i} is empty.")
 
 
-def chain_commands(commands: List[str], shell: bool = False) -> str:
-    """
-    Execute a list of commands sequentially, concatenating their standard output.
+def run_pipe(commands: List[List[str]]) -> str:
+    """Execute a series of commands connected by Unix pipes.
 
-    This mimics simple command chaining (e.g. ``cmd1 && cmd2 && cmd3``) without
-    involving the shell's ``&&`` or ``;`` operators.  Each command is executed
-    independently; if any command fails (non‑zero return code) a
-    ``subprocess.CalledProcessError`` is raised.
+    The function creates a pipeline where the standard output of each command
+    becomes the standard input of the next command.  The final command's
+    standard output is captured and returned as a decoded string.
 
     Parameters
     ----------
-    commands:
-        A list of command strings.  When ``shell=False`` each string is split
-        using ``shlex.split`` to obtain the argument list.
-    shell:
-        Whether to execute each command through the system shell.  When ``True``,
-        the command strings are passed directly to ``subprocess.run`` with
-        ``shell=True``.
+    commands :
+        A list where each element is a list of strings representing a command
+        and its arguments, e.g. ``[["ls", "-l"], ["grep", "py"]]``.
 
     Returns
     -------
     str
-        The concatenated standard output of all commands.
+        The decoded standard output of the last command in the pipeline.
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If any command in the pipeline exits with a non‑zero status.
+    ValueError
+        If *commands* is empty or contains an empty command.
     """
-    import shlex
+    _validate_commands(commands)
 
-    combined_output: List[str] = []
+    # Initialise the pipeline.  The first process reads from the default stdin.
+    # Subsequent processes read from the previous process's stdout.
+    processes: List[subprocess.Popen] = []
+    prev_stdout = None
 
+    for i, cmd in enumerate(commands):
+        # For the last command we want to capture stdout.
+        capture_stdout = i == len(commands) - 1
+        proc = subprocess.Popen(
+            cmd,
+            stdin=prev_stdout,
+            stdout=subprocess.PIPE if capture_stdout else subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        # Close the previous stdout in the parent to allow the child to receive EOF.
+        if prev_stdout is not None:
+            prev_stdout.close()
+        prev_stdout = proc.stdout
+        processes.append(proc)
+
+    # At this point ``prev_stdout`` refers to the stdout pipe of the last process.
+    # Retrieve its output and wait for all processes to finish.
+    final_output, final_err = processes[-1].communicate()
+    # Ensure earlier processes have terminated.
+    for proc in processes[:-1]:
+        proc.wait()
+
+    # Propagate errors if any process failed.
+    for proc in processes:
+        if proc.returncode != 0:
+            # Include stderr from the failing process for easier debugging.
+            err_msg = proc.stderr.read() if proc.stderr else ""
+            raise subprocess.CalledProcessError(
+                proc.returncode, proc.args, output=final_output, stderr=err_msg
+            )
+
+    return final_output
+
+
+def run_chain(commands: List[List[str]]) -> List[Tuple[int, str, str]]:
+    """Execute a list of commands sequentially (no piping).
+
+    Each command runs independently; its stdout and stderr are captured.
+    The function returns a list of tuples containing the return code,
+    stdout, and stderr for each command in the order they were executed.
+
+    Parameters
+    ----------
+    commands :
+        A list of command specifications, each being a list of strings.
+
+    Returns
+    -------
+    list[tuple[int, str, str]]
+        ``[(returncode, stdout, stderr), ...]`` for each command.
+    """
+    _validate_commands(commands)
+
+    results: List[Tuple[int, str, str]] = []
     for cmd in commands:
-        if shell:
-            result = subprocess.run(
-                cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-        else:
-            args = shlex.split(cmd)
-            result = subprocess.run(
-                args,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-        combined_output.append(result.stdout)
-
-    return "".join(combined_output)
+        completed = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+        )
+        results.append((completed.returncode, completed.stdout, completed.stderr))
+    return results
 
 
-__all__ = ["run_pipeline", "chain_commands"]
+__all__ = ["run_pipe", "run_chain"]
