@@ -1,7 +1,9 @@
 """
-Top‑level package for the *linux‑foundations* educational modules.
+Top‑level package for the *linux‑foundations* project.
+
+Exports the public helpers for file searching and text grepping.
 """
 
-from .processes import list_processes  # re‑export for convenient access
+from .search import find_files, grep_in_file, grep_in_dir
 
-__all__ = ["list_processes"]
+__all__ = ["find_files", "grep_in_file", "grep_in_dir"]
