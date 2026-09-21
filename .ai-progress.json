@@ -15,9 +15,10 @@
         "Create stdin stdout stderr Notes",
         "Learn Pipes and Command Chaining",
         "Create Pipes and Command Chaining Notes",
-        "Learn Searching Files and Text"
+        "Learn Searching Files and Text",
+        "Create Searching Files and Text Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 15
+    "project_progress": 16
 }
