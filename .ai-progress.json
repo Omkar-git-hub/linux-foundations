@@ -17,9 +17,10 @@
         "Create Pipes and Command Chaining Notes",
         "Learn Searching Files and Text",
         "Create Searching Files and Text Notes",
-        "Learn Linux Text Processing"
+        "Learn Linux Text Processing",
+        "Create Text Processing Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 17
+    "project_progress": 18
 }
