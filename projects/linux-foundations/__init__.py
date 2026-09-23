@@ -1,34 +1,28 @@
 """
-Top‑level package for the *linux‑foundations* educational modules.
+Top‑level package for the *linux‑foundations* project.
 
-The ``text_processing`` module provides simple, pure‑Python equivalents of
-common Linux command‑line utilities.  It is imported here for convenient
-access:
-
-    from projects.linux_foundations import text_processing
+The public API re‑exports the most commonly used helpers so that they can
+be imported directly from ``linux_foundations``.
 """
 
-from . import text_processing  # noqa: F401
-
-# Export the public symbols of the submodule at the package level for
-# backward compatibility with earlier exercises.
-from .text_processing import (
-    count_lines,
-    count_words,
-    count_characters,
-    grep,
-    replace,
-    cut_columns,
-    sort_lines,
+from .archives import (
+    create_tar,
+    extract_tar,
+    create_zip,
+    extract_zip,
+    compress_gzip,
+    decompress_gzip,
+    compress_bzip2,
+    decompress_bzip2,
 )
 
 __all__ = [
-    "count_lines",
-    "count_words",
-    "count_characters",
-    "grep",
-    "replace",
-    "cut_columns",
-    "sort_lines",
-    "text_processing",
+    "create_tar",
+    "extract_tar",
+    "create_zip",
+    "extract_zip",
+    "compress_gzip",
+    "decompress_gzip",
+    "compress_bzip2",
+    "decompress_bzip2",
 ]
