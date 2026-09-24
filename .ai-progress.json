@@ -1,5 +1,5 @@
 {
-    "current_day": 10,
+    "current_day": 11,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -20,9 +20,10 @@
         "Learn Linux Text Processing",
         "Create Text Processing Notes",
         "Learn Archives and Compression",
-        "Create Archives and Compression Notes"
+        "Create Archives and Compression Notes",
+        "Learn Linux Package Management"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 20
+    "project_progress": 21
 }
