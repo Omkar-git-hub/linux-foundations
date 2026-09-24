@@ -21,9 +21,10 @@
         "Create Text Processing Notes",
         "Learn Archives and Compression",
         "Create Archives and Compression Notes",
-        "Learn Linux Package Management"
+        "Learn Linux Package Management",
+        "Create Package Management Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 21
+    "project_progress": 22
 }
