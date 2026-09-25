@@ -23,9 +23,10 @@
         "Create Archives and Compression Notes",
         "Learn Linux Package Management",
         "Create Package Management Notes",
-        "Learn Environment Variables"
+        "Learn Environment Variables",
+        "Create Environment Variables Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 23
+    "project_progress": 24
 }
