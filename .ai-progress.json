@@ -27,9 +27,10 @@
         "Create Environment Variables Notes",
         "Learn PATH and Command Resolution",
         "Create PATH and Command Resolution Notes",
-        "Learn Bash Scripting"
+        "Learn Bash Scripting",
+        "Create Bash Scripting Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 27
+    "project_progress": 28
 }
