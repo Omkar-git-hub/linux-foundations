@@ -25,9 +25,10 @@
         "Create Package Management Notes",
         "Learn Environment Variables",
         "Create Environment Variables Notes",
-        "Learn PATH and Command Resolution"
+        "Learn PATH and Command Resolution",
+        "Create PATH and Command Resolution Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 25
+    "project_progress": 26
 }

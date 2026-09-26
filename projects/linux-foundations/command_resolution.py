@@ -1,64 +1,118 @@
 """
-Utility for resolving a command name to an absolute executable path using the
-system ``PATH`` environment variable.
+Utility functions for resolving executable commands using the system ``PATH`` variable.
 
-The implementation mirrors the behaviour of the Unix ``which`` command:
-the first matching executable found in the directories listed in ``PATH`` is
-returned. If no executable is found, ``None`` is returned.
+The module provides a small, pure‑Python implementation that mirrors the behaviour
+of the Unix ``which`` command.  It is deliberately lightweight and does not depend
+on external packages – only the Python standard library.
 
-Typical usage::
+Typical usage
+-------------
 
-    from projects.linux_foundations.command_resolution import resolve_command
-
-    path = resolve_command("python")
-    if path:
-        print(f"Executable found at: {path}")
-    else:
-        print("Command not found in PATH")
+>>> from projects.linux_foundations.command_resolution import resolve_command
+>>> resolve_command("python")  # doctest: +SKIP
+PosixPath('/usr/bin/python')
 """
 
 from __future__ import annotations
 
 import os
-from typing import Optional
+import shutil
+from pathlib import Path
+from typing import List, Optional
+
+__all__ = [
+    "get_path_dirs",
+    "is_executable",
+    "resolve_command",
+]
 
 
-def resolve_command(command: str) -> Optional[str]:
+def get_path_dirs() -> List[Path]:
     """
-    Resolve *command* to an absolute path of an executable found in ``PATH``.
+    Return a list of directories from the ``PATH`` environment variable.
 
-    Parameters
-    ----------
-    command:
-        The name of the command to resolve. It may be a simple filename
-        (e.g. ``"ls"``) or a relative/absolute path. If *command* already
-        contains a directory separator, it is treated as a direct path and
-        validated for executability.
+    The function splits the ``PATH`` variable using ``os.pathsep`` (``:`` on
+    POSIX, ``;`` on Windows) and returns each entry as a :class:`~pathlib.Path`
+    object. Empty entries are ignored.
 
     Returns
     -------
-    Optional[str]
-        The absolute path to the executable if found, otherwise ``None``.
+    List[Path]
+        Ordered list of directories that constitute the search path.
     """
-    if not command:
+    raw_path = os.getenv("PATH", "")
+    dirs = [Path(p) for p in raw_path.split(os.pathsep) if p]
+    return dirs
+
+
+def is_executable(file_path: Path) -> bool:
+    """
+    Determine whether *file_path* points to an executable file.
+
+    The check is performed using ``os.access`` with the ``X_OK`` flag.  On
+    Windows the function also checks the file suffix against the list of
+    PATHEXT extensions.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to the candidate file.
+
+    Returns
+    -------
+    bool
+        ``True`` if the file exists and is executable, ``False`` otherwise.
+    """
+    if not file_path.is_file():
+        return False
+
+    if os.name == "nt":
+        # Windows uses PATHEXT to decide what is executable.
+        pathext = os.getenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
+        executable_exts = {ext.lower() for ext in pathext.split(os.pathsep)}
+        return file_path.suffix.lower() in executable_exts
+    else:
+        return os.access(str(file_path), os.X_OK)
+
+
+def resolve_command(command: str) -> Optional[Path]:
+    """
+    Resolve *command* to an absolute path of an executable using the ``PATH`` variable.
+
+    The resolution follows the same rules as the Unix ``which`` command:
+
+    * If *command* contains a directory separator (``/`` on POSIX, ``\\`` on
+      Windows), it is treated as a direct path.  The function checks whether the
+      path points to an executable file and returns it if so.
+    * Otherwise the function iterates over each directory listed in ``PATH`` and
+      returns the first matching executable.
+
+    Parameters
+    ----------
+    command : str
+        Name of the command or a relative/absolute path.
+
+    Returns
+    -------
+    Optional[Path]
+        Absolute :class:`~pathlib.Path` to the executable if found, otherwise ``None``.
+    """
+    # Direct path supplied?
+    candidate = Path(command)
+    if os.sep in command or (os.altsep and os.altsep in command):
+        if is_executable(candidate):
+            return candidate.resolve()
         return None
 
-    # If the command already contains a path separator, treat it as a direct path.
-    if os.path.sep in command or (os.path.altsep and os.path.altsep in command):
-        abs_path = os.path.abspath(command)
-        if os.path.isfile(abs_path) and os.access(abs_path, os.X_OK):
-            return abs_path
-        return None
+    # Search through PATH directories.
+    for directory in get_path_dirs():
+        potential = directory / command
+        if is_executable(potential):
+            return potential.resolve()
 
-    path_env = os.environ.get("PATH", "")
-    for directory in path_env.split(os.pathsep):
-        if not directory:
-            continue
-        candidate = os.path.join(directory, command)
-        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
-            return os.path.abspath(candidate)
+    # Fallback to shutil.which for edge‑cases (e.g., Windows PATHEXT handling).
+    which_result = shutil.which(command)
+    if which_result:
+        return Path(which_result).resolve()
 
     return None
-
-
-__all__ = ["resolve_command"]
