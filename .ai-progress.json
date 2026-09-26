@@ -1,5 +1,5 @@
 {
-    "current_day": 4,
+    "current_day": 13,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -8,9 +8,27 @@
         "Learn Linux File Permissions",
         "Create File Permissions Notes",
         "Learn Users, Groups and sudo",
-        "Create Users, Groups and sudo Notes"
+        "Create Users, Groups and sudo Notes",
+        "Learn Linux Processes",
+        "Create Processes Notes",
+        "Learn Standard Input, Output and Error",
+        "Create stdin stdout stderr Notes",
+        "Learn Pipes and Command Chaining",
+        "Create Pipes and Command Chaining Notes",
+        "Learn Searching Files and Text",
+        "Create Searching Files and Text Notes",
+        "Learn Linux Text Processing",
+        "Create Text Processing Notes",
+        "Learn Archives and Compression",
+        "Create Archives and Compression Notes",
+        "Learn Linux Package Management",
+        "Create Package Management Notes",
+        "Learn Environment Variables",
+        "Create Environment Variables Notes",
+        "Learn PATH and Command Resolution",
+        "Create PATH and Command Resolution Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 8
+    "project_progress": 26
 }

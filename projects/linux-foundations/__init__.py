@@ -1,21 +1,28 @@
 """
-Linux Foundations package.
+Top‑level package for the *linux‑foundations* project.
 
-Exports the public file‑handling utilities for convenient import:
-
-    from projects.linux_foundations import list_files, read_file, write_file
+The public API re‑exports the most commonly used helpers so that they can
+be imported directly from ``linux_foundations``.
 """
 
-from .files import (
-    ensure_dir_exists,
-    list_files,
-    read_file,
-    write_file,
+from .archives import (
+    create_tar,
+    extract_tar,
+    create_zip,
+    extract_zip,
+    compress_gzip,
+    decompress_gzip,
+    compress_bzip2,
+    decompress_bzip2,
 )
 
 __all__ = [
-    "ensure_dir_exists",
-    "list_files",
-    "read_file",
-    "write_file",
+    "create_tar",
+    "extract_tar",
+    "create_zip",
+    "extract_zip",
+    "compress_gzip",
+    "decompress_gzip",
+    "compress_bzip2",
+    "decompress_bzip2",
 ]
