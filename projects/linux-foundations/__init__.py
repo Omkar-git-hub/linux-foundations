@@ -1,28 +1,14 @@
 """
-Top‑level package for the *linux‑foundations* project.
+Top‑level package for the *linux_foundations* collection.
 
-The public API re‑exports the most commonly used helpers so that they can
-be imported directly from ``linux_foundations``.
+The package aggregates a variety of utilities that illustrate fundamental
+Linux concepts.  Sub‑modules are imported lazily to keep import time low.
 """
 
-from .archives import (
-    create_tar,
-    extract_tar,
-    create_zip,
-    extract_zip,
-    compress_gzip,
-    decompress_gzip,
-    compress_bzip2,
-    decompress_bzip2,
-)
+# Export the most commonly used helpers at the package level for convenience.
+from .shell_control import split_command, quote_argument
 
 __all__ = [
-    "create_tar",
-    "extract_tar",
-    "create_zip",
-    "extract_zip",
-    "compress_gzip",
-    "decompress_gzip",
-    "compress_bzip2",
-    "decompress_bzip2",
+    "split_command",
+    "quote_argument",
 ]
