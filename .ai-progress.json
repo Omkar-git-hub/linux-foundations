@@ -29,9 +29,10 @@
         "Create PATH and Command Resolution Notes",
         "Learn Bash Scripting",
         "Create Bash Scripting Notes",
-        "Learn Shell Control and Quoting"
+        "Learn Shell Control and Quoting",
+        "Create Shell Control and Quoting Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 29
+    "project_progress": 30
 }
