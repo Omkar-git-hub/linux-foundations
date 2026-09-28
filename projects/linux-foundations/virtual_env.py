@@ -1,167 +1,147 @@
 """
-Utility functions for managing Python virtual environments on Linux.
+Virtual Environment Utilities
 
-This module provides a thin wrapper around the standard library :mod:`venv`
-module and common ``pip`` commands to create, activate, and manage virtual
-environments programmatically.
-
-Typical usage::
-
-    from projects.linux_foundations.virtual_env import (
-        create_env,
-        activate_env,
-        install_package,
-        list_installed,
-    )
-
-    env_path = create_env("/tmp/myenv")
-    activation_cmd = activate_env(env_path)
-    install_package(env_path, "requests")
-    packages = list_installed(env_path)
+This module provides higher‑level utilities that operate on Python
+virtual environments. It is deliberately lightweight and relies only
+on the standard library.
 """
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
+from typing import Iterable, List, Sequence
 
-import venv
-
-__all__ = [
-    "create_env",
-    "activate_env",
-    "install_package",
-    "list_installed",
+__all__: list[str] = [
+    "create_venv",
+    "activate_script_path",
+    "install_packages",
+    "list_installed_packages",
 ]
 
 
-def create_env(path: str | Path, *, python_executable: str = sys.executable) -> Path:
+def create_venv(path: str | os.PathLike, *, with_pip: bool = True) -> Path:
     """
-    Create a new virtual environment at *path*.
+    Create a Python virtual environment at ``path`` using the ``venv`` module.
 
     Parameters
     ----------
-    path: str | Path
+    path : str | os.PathLike
         Destination directory for the virtual environment.
-    python_executable: str, optional
-        Path to the Python interpreter to use for the environment.
-        Defaults to the interpreter running this code.
+    with_pip : bool, optional
+        Ensure ``pip`` is installed in the new environment (default is ``True``).
 
     Returns
     -------
     pathlib.Path
-        Absolute path to the created virtual environment directory.
-
-    Raises
-    ------
-    subprocess.CalledProcessError
-        If the underlying ``python -m venv`` command fails.
+        The absolute path to the created virtual environment.
     """
-    env_path = Path(path).expanduser().resolve()
-    builder = venv.EnvBuilder(with_pip=True, clear=True, symlinks=True, upgrade_deps=True)
-    # The EnvBuilder does not expose a direct way to specify a custom interpreter,
-    # so we invoke the interpreter explicitly via subprocess.
-    subprocess.run(
-        [python_executable, "-m", "venv", str(env_path)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    # Ensure pip is up‑to‑date
-    pip_path = env_path / "bin" / "pip"
-    subprocess.run([str(pip_path), "install", "--upgrade", "pip"], check=False)
-    return env_path
+    venv_path = Path(path).expanduser().resolve()
+    # ``python -m venv`` creates the environment; ``--without-pip`` disables pip.
+    cmd: List[str] = [sys.executable, "-m", "venv"]
+    if not with_pip:
+        cmd.append("--without-pip")
+    cmd.append(str(venv_path))
+    subprocess.run(cmd, check=True)
+    return venv_path
 
 
-def activate_env(env_path: str | Path) -> str:
+def activate_script_path(venv_path: str | os.PathLike, shell: str = "bash") -> Path:
     """
-    Return the shell command required to activate the virtual environment.
-
-    The function does **not** modify the current process environment; it simply
-    provides the command that a user would type in a POSIX shell.
+    Return the path to the activation script for a given shell.
 
     Parameters
     ----------
-    env_path: str | Path
+    venv_path : str | os.PathLike
         Path to the virtual environment directory.
+    shell : str, optional
+        Shell type (``bash``, ``fish``, ``csh``, ``powershell``). Defaults to ``bash``.
 
     Returns
     -------
-    str
-        The command string, e.g. ``source /path/to/env/bin/activate``.
+    pathlib.Path
+        Path to the appropriate activation script.
     """
-    env_path = Path(env_path).expanduser().resolve()
-    activate_script = env_path / "bin" / "activate"
-    return f"source {activate_script}"
+    venv = Path(venv_path).expanduser().resolve()
+    scripts = {
+        "bash": venv / "bin" / "activate",
+        "zsh": venv / "bin" / "activate",
+        "sh": venv / "bin" / "activate",
+        "fish": venv / "bin" / "activate.fish",
+        "csh": venv / "bin" / "activate.csh",
+        "tcsh": venv / "bin" / "activate.csh",
+        "powershell": venv / "Scripts" / "Activate.ps1",
+        "cmd": venv / "Scripts" / "activate.bat",
+    }
+    script = scripts.get(shell.lower())
+    if script is None or not script.exists():
+        raise FileNotFoundError(f"Activation script for shell '{shell}' not found.")
+    return script
 
 
-def _run_pip(env_path: Path, args: List[str]) -> subprocess.CompletedProcess:
+def install_packages(
+    venv_path: str | os.PathLike,
+    packages: Sequence[str],
+    *,
+    upgrade: bool = False,
+    index_url: str | None = None,
+) -> None:
     """
-    Helper to invoke the environment's ``pip`` with the given arguments.
-    """
-    pip_executable = env_path / "bin" / "pip"
-    return subprocess.run([str(pip_executable), *args], capture_output=True, text=True, check=False)
-
-
-def install_package(env_path: str | Path, package: str, *, upgrade: bool = False) -> None:
-    """
-    Install *package* into the virtual environment.
+    Install one or more packages into the virtual environment using ``pip``.
 
     Parameters
     ----------
-    env_path: str | Path
+    venv_path : str | os.PathLike
         Path to the virtual environment.
-    package: str
-        Name (or requirement specifier) of the package to install.
-    upgrade: bool, default False
-        If ``True``, pass ``--upgrade`` to ``pip install``.
+    packages : Sequence[str]
+        Iterable of package specifications (e.g., ``["requests", "flask==2.0"]``).
+    upgrade : bool, optional
+        Pass ``--upgrade`` to ``pip`` to upgrade already‑installed packages.
+    index_url : str | None, optional
+        Custom Python Package Index URL (e.g., a private repository).
 
     Raises
     ------
     subprocess.CalledProcessError
-        If the installation fails.
+        If the ``pip`` command fails.
     """
-    env_path = Path(env_path).expanduser().resolve()
-    args = ["install"]
+    if not packages:
+        return
+
+    venv = Path(venv_path).expanduser().resolve()
+    pip_executable = venv / ("Scripts" if os.name == "nt" else "bin") / "pip"
+    cmd: List[str] = [str(pip_executable), "install"]
     if upgrade:
-        args.append("--upgrade")
-    args.append(package)
-    result = _run_pip(env_path, args)
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(
-            result.returncode, result.args, output=result.stdout, stderr=result.stderr
-        )
+        cmd.append("--upgrade")
+    if index_url:
+        cmd.extend(["--index-url", index_url])
+    cmd.extend(packages)
+    subprocess.run(cmd, check=True)
 
 
-def list_installed(env_path: str | Path) -> List[str]:
+def list_installed_packages(venv_path: str | os.PathLike) -> List[str]:
     """
-    Return a list of installed packages in the virtual environment.
-
-    The list contains strings in the form ``package==version`` as produced by
-    ``pip list --format=freeze``.
+    Return a list of installed packages (``pkg==version``) inside the virtual environment.
 
     Parameters
     ----------
-    env_path: str | Path
+    venv_path : str | os.PathLike
         Path to the virtual environment.
 
     Returns
     -------
     list[str]
-        Installed packages.
-
-    Raises
-    ------
-    subprocess.CalledProcessError
-        If the ``pip list`` command fails.
+        List of package specifications as reported by ``pip list --format=freeze``.
     """
-    env_path = Path(env_path).expanduser().resolve()
-    result = _run_pip(env_path, ["list", "--format=freeze"])
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(
-            result.returncode, result.args, output=result.stdout, stderr=result.stderr
-        )
-    packages = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    return packages
+    venv = Path(venv_path).expanduser().resolve()
+    pip_executable = venv / ("Scripts" if os.name == "nt" else "bin") / "pip"
+    result = subprocess.run(
+        [str(pip_executable), "list", "--format=freeze"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    lines = result.stdout.strip().splitlines()
+    return [line for line in lines if line]

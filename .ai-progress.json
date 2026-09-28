@@ -31,9 +31,10 @@
         "Create Bash Scripting Notes",
         "Learn Shell Control and Quoting",
         "Create Shell Control and Quoting Notes",
-        "Learn Python Virtual Environments on Linux"
+        "Learn Python Virtual Environments on Linux",
+        "Create Python Virtual Environment Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 31
+    "project_progress": 32
 }
