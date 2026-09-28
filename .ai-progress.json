@@ -1,5 +1,5 @@
 {
-    "current_day": 16,
+    "current_day": 17,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -32,9 +32,10 @@
         "Learn Shell Control and Quoting",
         "Create Shell Control and Quoting Notes",
         "Learn Python Virtual Environments on Linux",
-        "Create Python Virtual Environment Notes"
+        "Create Python Virtual Environment Notes",
+        "Learn Linux Services and systemctl"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 32
+    "project_progress": 33
 }
