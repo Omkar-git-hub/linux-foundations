@@ -1,215 +1,216 @@
 """
-Utilities for interacting with systemd services via ``systemctl``.
+Utility functions for interacting with systemd services via ``systemctl``.
 
-The functions provided are thin wrappers around the ``systemctl`` command
-and return the command output as Python objects.  They are intended for
-educational purposes and simple scripting; for production‑grade
-interaction consider using a dedicated library such as ``dbus`` or
-``pydbus``.
+This module provides a thin wrapper around the ``systemctl`` command-line
+tool, exposing common operations such as listing services, checking their
+status, and starting/stopping/restarting them.  The functions raise
+``subprocess.CalledProcessError`` if the underlying ``systemctl`` call
+fails, allowing callers to handle errors explicitly.
+
+Typical usage::
+
+    from projects.linux_foundations.services import list_units, is_active, start
+
+    services = list_units()
+    if not is_active('ssh.service'):
+        start('ssh.service')
 """
 
 from __future__ import annotations
 
 import subprocess
-from typing import List, Tuple, Optional
+from typing import List
 
 
-def _run_systemctl(*args: str, capture_output: bool = True) -> subprocess.CompletedProcess:
+__all__ = [
+    "list_units",
+    "is_active",
+    "start",
+    "stop",
+    "restart",
+    "enable",
+    "disable",
+]
+
+
+def _run_systemctl(args: List[str]) -> subprocess.CompletedProcess:
     """
-    Execute ``systemctl`` with the supplied arguments.
+    Execute ``systemctl`` with the given arguments.
 
     Parameters
     ----------
-    *args:
-        Arguments passed directly to ``systemctl``.
-    capture_output:
-        If ``True`` (default) the standard output and error are captured
-        and returned in the ``CompletedProcess`` instance.
+    args :
+        List of arguments to pass to ``systemctl`` (excluding the command itself).
 
     Returns
     -------
     subprocess.CompletedProcess
-        The result of the command execution.
+        The completed process object.
 
     Raises
     ------
-    RuntimeError
-        If the ``systemctl`` executable cannot be found or the command
-        fails to start.
+    subprocess.CalledProcessError
+        If ``systemctl`` exits with a non‑zero status.
     """
-    cmd = ["systemctl", *args]
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=capture_output,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError as exc:
-        raise RuntimeError("systemctl not found on this system") from exc
-    return result
+    cmd = ["systemctl"] + args
+    return subprocess.run(
+        cmd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
-def list_services(active_only: bool = True) -> List[Tuple[str, str]]:
+def list_units(filter_type: str = "service") -> List[str]:
     """
-    List systemd services.
+    List all systemd units of a given type.
+
+    By default, this returns the names of all service units (``*.service``).
 
     Parameters
     ----------
-    active_only:
-        When ``True`` (default) only services in the ``active`` state are
-        returned.  When ``False`` all loaded services are listed.
+    filter_type :
+        The unit type to filter on (e.g., ``service``, ``socket``, ``timer``).
 
     Returns
     -------
-    List[Tuple[str, str]]
-        A list of ``(service_name, load_state)`` tuples.
-    """
-    args = ["list-units", "--type=service", "--no-legend", "--no-pager"]
-    if active_only:
-        args.append("--state=active")
-    result = _run_systemctl(*args)
+    List[str]
+        A list of unit names (e.g., ``['ssh.service', 'cron.service']``).
 
-    services: List[Tuple[str, str]] = []
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the ``systemctl`` command fails.
+    """
+    result = _run_systemctl(
+        [
+            "list-units",
+            f"--type={filter_type}",
+            "--all",
+            "--no-legend",
+            "--no-pager",
+        ]
+    )
+    units = []
     for line in result.stdout.strip().splitlines():
         if not line:
             continue
-        # Expected format: UNIT LOAD ACTIVE SUB DESCRIPTION
-        parts = line.split()
-        if parts:
-            unit = parts[0]
-            load_state = parts[1] if len(parts) > 1 else ""
-            services.append((unit, load_state))
-    return services
+        # The first column is the unit name.
+        unit_name = line.split()[0]
+        units.append(unit_name)
+    return units
 
 
-def get_service_status(service: str) -> str:
+def is_active(unit: str) -> bool:
     """
-    Retrieve the detailed status of a service.
+    Check whether a given unit is active.
 
     Parameters
     ----------
-    service:
-        The name of the service unit (e.g. ``ssh.service``).
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Returns
     -------
-    str
-        The raw output of ``systemctl status`` for the given service.
+    bool
+        ``True`` if the unit is active, ``False`` otherwise.
 
     Raises
     ------
-    RuntimeError
-        If the service does not exist or ``systemctl`` returns a non‑zero
-        exit code.
+    subprocess.CalledProcessError
+        If ``systemctl`` encounters an unexpected error.
     """
-    result = _run_systemctl("status", service)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to get status for {service}: {result.stderr.strip()}")
-    return result.stdout
+    try:
+        result = _run_systemctl(["is-active", unit])
+        return result.stdout.strip() == "active"
+    except subprocess.CalledProcessError as exc:
+        # ``systemctl is-active`` returns a non‑zero exit code for inactive units.
+        # Treat that as ``False`` rather than propagating the exception.
+        if exc.returncode == 3:  # inactive
+            return False
+        raise
 
 
-def start_service(service: str) -> None:
+def start(unit: str) -> None:
     """
-    Start a systemd service.
+    Start the specified unit.
 
     Parameters
     ----------
-    service:
-        The name of the service unit to start.
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Raises
     ------
-    RuntimeError
-        If the service cannot be started.
+    subprocess.CalledProcessError
+        If the start operation fails.
     """
-    result = _run_systemctl("start", service, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to start {service}")
+    _run_systemctl(["start", unit])
 
 
-def stop_service(service: str) -> None:
+def stop(unit: str) -> None:
     """
-    Stop a systemd service.
+    Stop the specified unit.
 
     Parameters
     ----------
-    service:
-        The name of the service unit to stop.
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Raises
     ------
-    RuntimeError
-        If the service cannot be stopped.
+    subprocess.CalledProcessError
+        If the stop operation fails.
     """
-    result = _run_systemctl("stop", service, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to stop {service}")
+    _run_systemctl(["stop", unit])
 
 
-def restart_service(service: str) -> None:
+def restart(unit: str) -> None:
     """
-    Restart a systemd service.
+    Restart the specified unit.
 
     Parameters
     ----------
-    service:
-        The name of the service unit to restart.
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Raises
     ------
-    RuntimeError
-        If the service cannot be restarted.
+    subprocess.CalledProcessError
+        If the restart operation fails.
     """
-    result = _run_systemctl("restart", service, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to restart {service}")
+    _run_systemctl(["restart", unit])
 
 
-def enable_service(service: str) -> None:
+def enable(unit: str) -> None:
     """
-    Enable a service to start at boot.
+    Enable the specified unit to start at boot.
 
     Parameters
     ----------
-    service:
-        The name of the service unit to enable.
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Raises
     ------
-    RuntimeError
-        If the service cannot be enabled.
+    subprocess.CalledProcessError
+        If the enable operation fails.
     """
-    result = _run_systemctl("enable", service, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to enable {service}")
+    _run_systemctl(["enable", unit])
 
 
-def disable_service(service: str) -> None:
+def disable(unit: str) -> None:
     """
-    Disable a service from starting at boot.
+    Disable the specified unit from starting at boot.
 
     Parameters
     ----------
-    service:
-        The name of the service unit to disable.
+    unit :
+        The full unit name (e.g., ``ssh.service``).
 
     Raises
     ------
-    RuntimeError
-        If the service cannot be disabled.
+    subprocess.CalledProcessError
+        If the disable operation fails.
     """
-    result = _run_systemctl("disable", service, capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to disable {service}")
-
-
-__all__ = [
-    "list_services",
-    "get_service_status",
-    "start_service",
-    "stop_service",
-    "restart_service",
-    "enable_service",
-    "disable_service",
-]
+    _run_systemctl(["disable", unit])

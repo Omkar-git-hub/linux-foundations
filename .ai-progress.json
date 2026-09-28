@@ -33,9 +33,10 @@
         "Create Shell Control and Quoting Notes",
         "Learn Python Virtual Environments on Linux",
         "Create Python Virtual Environment Notes",
-        "Learn Linux Services and systemctl"
+        "Learn Linux Services and systemctl",
+        "Create Services and systemctl Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 33
+    "project_progress": 34
 }
