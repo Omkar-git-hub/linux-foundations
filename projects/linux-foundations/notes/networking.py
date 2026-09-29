@@ -1,95 +1,90 @@
 """
-Linux Networking Fundamentals Notes
+Linux Networking Notes
 
-This module provides a concise overview of essential Linux networking
-concepts. The `networking_fundamentals` function returns a formatted string
-containing the key topics that are typically covered when learning Linux
-networking.
+This module provides concise reference notes for common Linux networking
+commands, configuration files, and concepts. The notes are stored in the
+`NOTES` constant and can be accessed via the `get_notes` function.
 
-The content is deliberately kept simple and self‑contained so that it can be
-used in documentation, tutorials, or unit tests without requiring any
-external resources.
+The content is deliberately kept short and focused on frequently used
+operations such as inspecting interfaces, configuring IP addresses,
+managing routing tables, and troubleshooting connectivity.
 """
 
-def networking_fundamentals() -> str:
+from __future__ import annotations
+
+__all__: list[str] = ["NOTES", "get_notes"]
+
+
+NOTES: str = """\
+# Linux Networking Reference
+
+## Interface Inspection
+- `ip link show` – List all network interfaces and their status.
+- `ifconfig -a` – Legacy command to display interfaces (requires net-tools).
+
+## IP Address Management
+- `ip addr show <iface>` – Show IP configuration for a specific interface.
+- `ip addr add <addr>/<prefix> dev <iface>` – Assign an IPv4/IPv6 address.
+- `ip addr del <addr>/<prefix> dev <iface>` – Remove an address.
+- `ifconfig <iface> <addr> netmask <mask> up` – Legacy way to set an address.
+
+## Bringing Interfaces Up/Down
+- `ip link set <iface> up` – Activate an interface.
+- `ip link set <iface> down` – Deactivate an interface.
+- `ifup <iface>` / `ifdown <iface>` – Debian/Ubuntu helper scripts.
+
+## Routing
+- `ip route show` – Display the routing table.
+- `ip route add default via <gateway> dev <iface>` – Set default gateway.
+- `ip route del <dest>` – Remove a route.
+- `route -n` – Legacy routing table view.
+
+## DNS Configuration
+- `/etc/resolv.conf` – Contains nameserver entries.
+  Example:
+  ```
+  nameserver 8.8.8.8
+  nameserver 1.1.1.1
+  ```
+
+## Common Troubleshooting Tools
+- `ping <host>` – Test ICMP reachability.
+- `traceroute <host>` – Show path packets take to a destination.
+- `ss -tuln` – List listening TCP/UDP sockets.
+- `netstat -tulnp` – Legacy socket list (requires net-tools).
+- `dig <domain>` / `nslookup <domain>` – DNS query utilities.
+- `tcpdump -i <iface>` – Capture packets on an interface.
+- `nmap <target>` – Network scanning and host discovery.
+
+## Wireless (Wi‑Fi) Utilities
+- `iwconfig` – Show wireless interface parameters.
+- `nmcli` – NetworkManager command‑line tool.
+- `wpa_supplicant` – WPA/WPA2 authentication daemon.
+
+## Persistent Configuration (Debian/Ubuntu)
+- `/etc/network/interfaces` – Classic static configuration file.
+- `/etc/netplan/*.yaml` – Netplan YAML configuration (used on newer releases).
+
+## Persistent Configuration (RHEL/CentOS)
+- `/etc/sysconfig/network-scripts/ifcfg-<iface>` – Interface definition files.
+
+## Quick One‑Liners
+- Show public IP: `curl -s https://ifconfig.me`
+- Restart networking service:
+  - Systemd: `systemctl restart networking` (Debian) or `systemctl restart NetworkManager`
+  - SysVinit: `/etc/init.d/networking restart`
+
+--- End of Notes ---
+"""
+
+
+def get_notes() -> str:
     """
-    Return a multiline string that outlines the core Linux networking
-    fundamentals.
-
-    The returned string includes sections on:
-
-    * Network interfaces and the ``ip`` command
-    * Basic IP addressing (IPv4/IPv6)
-    * Routing tables and the ``ip route`` command
-    * Common network utilities (ping, traceroute, netstat, ss)
-    * Firewall basics with ``iptables``/``nftables``
-    * DNS resolution via ``/etc/resolv.conf``
-    * Hostname configuration
-    * Basic troubleshooting workflow
+    Return the networking notes string.
 
     Returns
     -------
     str
-        Formatted notes describing the fundamentals.
+        The multiline networking reference notes.
     """
-    notes = """
-Linux Networking Fundamentals
-==============================
-
-1. Network Interfaces
----------------------
-- Physical (e.g., eth0, wlan0) and virtual (e.g., lo, tun0) interfaces.
-- Managed with the ``ip`` command:
-  ``ip link show`` – list interfaces
-  ``ip link set dev <iface> up|down`` – enable/disable
-
-2. IP Addressing
-----------------
-- IPv4: dotted decimal (e.g., 192.168.1.10/24)
-- IPv6: colon‑hexadecimal (e.g., 2001:db8::1/64)
-- Assign with ``ip addr add <addr>/<prefix> dev <iface>``
-
-3. Routing
-----------
-- Kernel routing table determines packet forwarding.
-- View with ``ip route show``.
-- Add static route: ``ip route add <dest>/<prefix> via <gateway> dev <iface>``.
-
-4. Common Utilities
--------------------
-- ``ping`` – ICMP echo request for reachability.
-- ``traceroute`` / ``tracepath`` – path discovery.
-- ``ss`` / ``netstat`` – socket statistics, listening ports.
-- ``curl`` / ``wget`` – HTTP client testing.
-
-5. Firewall (iptables / nftables)
----------------------------------
-- Packet filtering framework.
-- Basic iptables example:
-  ``iptables -A INPUT -p tcp --dport 22 -j ACCEPT``
-- Modern replacement: ``nft`` with tables, chains, and rules.
-
-6. DNS Resolution
------------------
-- Resolver reads ``/etc/resolv.conf`` for nameserver entries.
-- ``dig`` and ``nslookup`` query DNS records.
-
-7. Hostname Configuration
--------------------------
-- Set hostname: ``hostnamectl set-hostname <name>``.
-- ``/etc/hosts`` provides static name‑to‑IP mappings.
-
-8. Troubleshooting Workflow
----------------------------
-1. Verify interface state: ``ip link``.
-2. Check IP configuration: ``ip addr``.
-3. Test connectivity: ``ping`` the gateway, then an external IP.
-4. Examine routing: ``ip route``.
-5. Look at firewall rules: ``iptables -L`` or ``nft list ruleset``.
-6. Review DNS: ``cat /etc/resolv.conf`` and ``dig`` queries.
-
-These fundamentals form the basis for deeper topics such as
-network namespaces, bonding, bridging, VPNs, and advanced routing
-protocols.
-"""
-    return notes.strip()
+    return NOTES

@@ -37,9 +37,10 @@
         "Create Services and systemctl Notes",
         "Learn Linux Logs",
         "Create Linux Logs Notes",
-        "Learn Linux Networking Fundamentals"
+        "Learn Linux Networking Fundamentals",
+        "Create Linux Networking Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 37
+    "project_progress": 38
 }
