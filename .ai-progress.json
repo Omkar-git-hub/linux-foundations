@@ -35,9 +35,10 @@
         "Create Python Virtual Environment Notes",
         "Learn Linux Services and systemctl",
         "Create Services and systemctl Notes",
-        "Learn Linux Logs"
+        "Learn Linux Logs",
+        "Create Linux Logs Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 35
+    "project_progress": 36
 }
