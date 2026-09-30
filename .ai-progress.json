@@ -1,5 +1,5 @@
 {
-    "current_day": 20,
+    "current_day": 21,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -40,9 +40,10 @@
         "Learn Linux Networking Fundamentals",
         "Create Linux Networking Notes",
         "Learn curl, wget, Ports and DNS",
-        "Create curl wget Ports and DNS Notes"
+        "Create curl wget Ports and DNS Notes",
+        "Learn SSH"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 40
+    "project_progress": 41
 }
