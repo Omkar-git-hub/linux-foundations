@@ -55,9 +55,10 @@
         "Create System Information Notes",
         "Learn Symbolic and Hard Links",
         "Create Linux Links Notes",
-        "Learn File Descriptors and Advanced I/O"
+        "Learn File Descriptors and Advanced I/O",
+        "Create File Descriptors Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 55
+    "project_progress": 56
 }
