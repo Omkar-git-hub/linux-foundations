@@ -1,14 +1,23 @@
 """
-Top‑level package for the *linux_foundations* collection.
+Top‑level package for the *linux‑foundations* project.
 
-The package aggregates a variety of utilities that illustrate fundamental
-Linux concepts.  Sub‑modules are imported lazily to keep import time low.
+Exports a curated public API for convenience.
 """
 
-# Export the most commonly used helpers at the package level for convenience.
-from .shell_control import split_command, quote_argument
+from .links import (
+    create_symlink,
+    create_hardlink,
+    is_symlink,
+    is_hardlink,
+    get_link_target,
+    get_hardlink_count,
+)
 
 __all__ = [
-    "split_command",
-    "quote_argument",
+    "create_symlink",
+    "create_hardlink",
+    "is_symlink",
+    "is_hardlink",
+    "get_link_target",
+    "get_hardlink_count",
 ]
