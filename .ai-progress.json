@@ -53,9 +53,10 @@
         "Create CPU and Memory Monitoring Notes",
         "Learn Linux System Information",
         "Create System Information Notes",
-        "Learn Symbolic and Hard Links"
+        "Learn Symbolic and Hard Links",
+        "Create Linux Links Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 53
+    "project_progress": 54
 }
