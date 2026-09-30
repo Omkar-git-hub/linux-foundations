@@ -51,9 +51,10 @@
         "Create Disk and Storage Notes",
         "Learn CPU and Memory Monitoring",
         "Create CPU and Memory Monitoring Notes",
-        "Learn Linux System Information"
+        "Learn Linux System Information",
+        "Create System Information Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 51
+    "project_progress": 52
 }
