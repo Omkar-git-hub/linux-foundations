@@ -47,9 +47,10 @@
         "Create Git on Linux Notes",
         "Learn Cron and Scheduled Jobs",
         "Create Cron and Scheduled Jobs Notes",
-        "Learn Disk and Storage Management"
+        "Learn Disk and Storage Management",
+        "Create Disk and Storage Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 47
+    "project_progress": 48
 }
