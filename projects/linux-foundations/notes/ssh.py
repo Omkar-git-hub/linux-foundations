@@ -1,97 +1,137 @@
 """
-Notes on using SSH.
+SSH Notes Module
+================
 
-This module contains plain‑text documentation that complements the programmatic
-helpers in :pymod:`projects.linux_foundations.ssh`.  It is deliberately kept
-simple and does not import any heavy dependencies; the content is intended to
-be read by developers learning how to work with SSH from the command line and
-from Python.
+This module provides helpful documentation and utility functions related to
+using the OpenSSH client (`ssh`).  The notes are written as a plain‑text
+string that can be displayed in a terminal or used by other parts of the
+project (for example, in CLI help output).
 
-Typical topics covered:
+Utility Functions
+-----------------
 
-* Generating a key pair with ``ssh-keygen``.
-* Adding the public key to ``~/.ssh/authorized_keys`` on the remote host.
-* Testing connectivity with ``ssh -o BatchMode=yes``.
-* Running remote commands via ``ssh``.
-* Copying files with ``scp`` or ``rsync``.
-* Common pitfalls (host key verification, permissions, agent forwarding).
+* :func:`generate_ssh_command` – Build an ``ssh`` command line from
+  parameters such as host, user, port, identity file and additional options.
 
-The notes are provided as a string constant so that they can be displayed
-programmatically, for example::
+* :func:`get_ssh_notes` – Return the multi‑line notes string.
 
-    from projects.linux_foundations.notes.ssh import SSH_NOTES
-    print(SSH_NOTES)
-
+The implementation purposefully avoids any external dependencies and relies
+solely on the Python standard library.
 """
 
-SSH_NOTES = """
-SSH (Secure Shell) is the de‑facto standard for encrypted remote login and
-command execution.  Below is a quick cheat‑sheet for everyday use.
+from __future__ import annotations
 
-1. **Generate a key pair**
+from shlex import quote
+from typing import Mapping, Sequence
 
-   ```sh
-   ssh-keygen -t rsa -b 4096 -C "your@email.com" -f ~/.ssh/id_rsa_mykey
-   ```
+__all__: Sequence[str] = ("SSH_NOTES", "generate_ssh_command", "get_ssh_notes")
 
-   * ``-t`` selects the key type (rsa, ed25519, …).
-   * ``-b`` sets the key size for RSA keys.
-   * ``-C`` adds a comment (often an email address).
-   * ``-f`` specifies the output file.
 
-2. **Copy the public key to the remote host**
+SSH_NOTES: str = """\
+SSH (Secure Shell) is a protocol for securely accessing remote systems.
+Below are common usage patterns and tips.
 
-   ```sh
-   ssh-copy-id -i ~/.ssh/id_rsa_mykey.pub user@remote.example.com
-   ```
+1. Basic connection
+   $ ssh user@host
 
-   Alternatively, append the contents of ``id_rsa_mykey.pub`` to
-   ``~/.ssh/authorized_keys`` on the remote side.
+2. Specify a non‑default port
+   $ ssh -p 2222 user@host
 
-3. **Test the connection (no password prompt)**
+3. Use a specific private key
+   $ ssh -i /path/to/key.pem user@host
 
-   ```sh
-   ssh -o BatchMode=yes -o StrictHostKeyChecking=no user@remote.example.com echo ok
-   ```
+4. Disable strict host key checking (useful for scripts)
+   $ ssh -o StrictHostKeyChecking=no user@host
 
-   The ``BatchMode`` option disables interactive password prompts, which is
-   useful for scripts.  ``StrictHostKeyChecking=no`` avoids the “host key
-   verification” prompt on first use – use with care.
+5. Forward a local port to the remote host
+   $ ssh -L 8080:localhost:80 user@host
 
-4. **Run a remote command**
+6. Remote command execution
+   $ ssh user@host 'ls -l /var/www'
 
-   ```sh
-   ssh user@remote.example.com "ls -l /var/www"
-   ```
+7. SSH config file (~/.ssh/config) can store host aliases:
+   Host myserver
+       HostName example.com
+       User alice
+       Port 2222
+       IdentityFile ~/.ssh/id_rsa_myserver
 
-   Quoting is important: the whole remote command must be a single argument
-   to the local ``ssh`` binary.
+Tips
+----
+* Keep your private keys protected (chmod 600).
+* Use ssh-agent to cache passphrases.
+* For automation, consider using key‑based auth and disabling
+  ``StrictHostKeyChecking`` only when you trust the target host.
+"""
 
-5. **Copy files**
 
-   * Using ``scp`` (simple, works everywhere):
+def generate_ssh_command(
+    host: str,
+    *,
+    user: str | None = None,
+    port: int | None = None,
+    identity_file: str | None = None,
+    options: Mapping[str, str] | None = None,
+) -> str:
+    """
+    Build an ``ssh`` command line string from the supplied arguments.
 
-     ```sh
-     scp -P 2222 local.txt user@remote.example.com:/tmp/
-     ```
+    Parameters
+    ----------
+    host: str
+        The remote hostname or IP address.
+    user: str, optional
+        Username for the remote login. If omitted, the current system user
+        is used by the ``ssh`` client.
+    port: int, optional
+        Remote SSH port. If omitted, the default port 22 is used.
+    identity_file: str, optional
+        Path to a private key file (passed to ``-i``).
+    options: Mapping[str, str], optional
+        Additional ``-o`` options. Keys are option names, values are the
+        corresponding values (both will be quoted as needed).
 
-   * Using ``rsync`` (efficient for large or incremental transfers):
+    Returns
+    -------
+    str
+        A ready‑to‑execute command line that can be passed to ``subprocess``
+        or printed to the console.
 
-     ```sh
-     rsync -avz -e "ssh -p 2222" local_dir/ user@remote.example.com:/remote/dir/
-     ```
+    Examples
+    --------
+    >>> generate_ssh_command('example.com', user='bob')
+    "ssh bob@example.com"
+    >>> generate_ssh_command('example.com', port=2222, identity_file='~/.ssh/key')
+    "ssh -p 2222 -i ~/.ssh/key example.com"
+    """
+    parts: list[str] = ["ssh"]
 
-6. **Common pitfalls**
+    if port is not None:
+        parts.extend(["-p", str(port)])
 
-   * **Permissions** – ``~/.ssh`` should be ``700`` and the private key
-     ``600``; otherwise the SSH client will refuse to use the key.
-   * **Host key verification** – the first time you connect, SSH asks to
-     confirm the host’s fingerprint.  In automated scripts you can set
-     ``StrictHostKeyChecking=no`` or manage known hosts manually.
-   * **Agent forwarding** – if you need to use your local keys on a remote
-     host, enable it with ``ssh -A`` and ensure ``ForwardAgent yes`` in your
-     ``~/.ssh/config``.
+    if identity_file is not None:
+        parts.extend(["-i", quote(identity_file)])
 
-7. **Python helpers**
+    if options:
+        for opt_name, opt_value in options.items():
+            # Quote the whole option string to protect spaces or special chars
+            opt_str = f"{opt_name}={opt_value}"
+            parts.extend(["-o", quote(opt_str)])
 
-   The :pymod:`projects.l
+    # Build the user@host part
+    destination = f"{user}@{host}" if user else host
+    parts.append(destination)
+
+    return " ".join(parts)
+
+
+def get_ssh_notes() -> str:
+    """
+    Return the SSH notes documentation.
+
+    Returns
+    -------
+    str
+        The multi‑line string stored in :data:`SSH_NOTES`.
+    """
+    return SSH_NOTES
