@@ -49,9 +49,10 @@
         "Create Cron and Scheduled Jobs Notes",
         "Learn Disk and Storage Management",
         "Create Disk and Storage Notes",
-        "Learn CPU and Memory Monitoring"
+        "Learn CPU and Memory Monitoring",
+        "Create CPU and Memory Monitoring Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 49
+    "project_progress": 50
 }
