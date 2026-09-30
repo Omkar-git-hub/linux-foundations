@@ -43,9 +43,10 @@
         "Create curl wget Ports and DNS Notes",
         "Learn SSH",
         "Create SSH Notes",
-        "Learn Git on Linux"
+        "Learn Git on Linux",
+        "Create Git on Linux Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 43
+    "project_progress": 44
 }
