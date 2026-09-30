@@ -1,123 +1,204 @@
 """
-Utility functions for basic file and directory operations.
+Utility functions for advanced file I/O operations using low‑level file descriptors.
 
-This module provides a small, well‑tested API that can be used in the
-“Learn Files and Directories” exercises.  All functions operate on
-text files using UTF‑8 encoding and raise the standard Python exceptions
-for error conditions (e.g., ``FileNotFoundError`` for missing paths).
+This module provides a thin wrapper around the :pymod:`os` module to work with
+file descriptors directly.  The functions are deliberately small and focused
+so they can be used in teaching examples and unit tests without pulling in
+external dependencies.
 
-Public API
-~~~~~~~~~~
-- ``list_files`` – Return a sorted list of file names in a directory.
-- ``read_file`` – Read the entire contents of a text file.
-- ``write_file`` – Write text to a file, creating parent directories as needed.
-- ``ensure_dir_exists`` – Ensure a directory exists, creating it if necessary.
+Typical usage::
+
+    from projects.linux_foundations.files import (
+        open_file_descriptor,
+        read_from_fd,
+        write_to_fd,
+        close_fd,
+        duplicate_fd,
+        fd_open,
+    )
+
+    # Write some data
+    with fd_open('example.txt', 'w') as fd:
+        write_to_fd(fd, b'Hello, world!')
+
+    # Read it back
+    with fd_open('example.txt', 'r') as fd:
+        content = read_from_fd(fd).decode()
+        assert content == 'Hello, world!'
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import List
+import os
+from contextlib import contextmanager
+from typing import Generator, Iterable, Union
+
+__all__ = [
+    "open_file_descriptor",
+    "read_from_fd",
+    "write_to_fd",
+    "close_fd",
+    "duplicate_fd",
+    "fd_open",
+]
 
 
-def ensure_dir_exists(directory: str | Path) -> None:
+# Mapping of mode strings to os flags.
+_MODE_FLAGS = {
+    "r": os.O_RDONLY,
+    "rb": os.O_RDONLY,
+    "w": os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+    "wb": os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+    "a": os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+    "ab": os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+    "r+": os.O_RDWR,
+    "rb+": os.O_RDWR,
+    "r+b": os.O_RDWR,
+    "w+": os.O_RDWR | os.O_CREAT | os.O_TRUNC,
+    "wb+": os.O_RDWR | os.O_CREAT | os.O_TRUNC,
+    "w+b": os.O_RDWR | os.O_CREAT | os.O_TRUNC,
+    "a+": os.O_RDWR | os.O_CREAT | os.O_APPEND,
+    "ab+": os.O_RDWR | os.O_CREAT | os.O_APPEND,
+    "a+b": os.O_RDWR | os.O_CREAT | os.O_APPEND,
+}
+
+
+def open_file_descriptor(
+    path: str,
+    mode: str = "r",
+    *,
+    permissions: int = 0o666,
+) -> int:
     """
-    Ensure that *directory* exists.
-
-    If the directory (or any of its parents) does not exist, it is created.
-    The function does nothing if the directory already exists.
+    Open *path* using low‑level ``os.open`` and return the resulting file descriptor.
 
     Parameters
     ----------
-    directory: str or pathlib.Path
-        Path to the directory that should exist.
-    """
-    Path(directory).mkdir(parents=True, exist_ok=True)
-
-
-def list_files(directory: str | Path) -> List[str]:
-    """
-    Return a sorted list of file names (not directories) directly under *directory*.
-
-    The function does **not** recurse into sub‑directories.  Only regular files
-    are returned; symbolic links that point to files are included, while links
-    to directories are ignored.
-
-    Parameters
-    ----------
-    directory: str or pathlib.Path
-        The directory to inspect.
+    path: str
+        Path to the file to open.
+    mode: str, optional
+        A string compatible with the built‑in ``open`` function (e.g. ``'r'``,
+        ``'w'``, ``'a+'``).  Binary/text distinction does not affect the low‑level
+        operation; the caller is responsible for encoding/decoding when needed.
+    permissions: int, optional
+        Permission bits used when the file is created (default ``0o666``).
 
     Returns
     -------
-    List[str]
-        Sorted list of file names (as strings) present in *directory*.
+    int
+        The file descriptor for the opened file.
 
     Raises
     ------
-    FileNotFoundError
-        If *directory* does not exist or is not a directory.
+    ValueError
+        If *mode* is not recognised.
+    OSError
+        Propagated from :func:`os.open` if the operation fails.
     """
-    dir_path = Path(directory)
-    if not dir_path.is_dir():
-        raise FileNotFoundError(f"Directory not found: {directory!s}")
-
-    files = [p.name for p in dir_path.iterdir() if p.is_file()]
-    files.sort()
-    return files
+    if mode not in _MODE_FLAGS:
+        raise ValueError(f"Unsupported mode '{mode}'. Supported modes: {sorted(_MODE_FLAGS)}")
+    flags = _MODE_FLAGS[mode]
+    fd = os.open(path, flags, permissions)
+    return fd
 
 
-def read_file(file_path: str | Path) -> str:
+def read_from_fd(fd: int, size: int = -1) -> bytes:
     """
-    Read the entire contents of a text file using UTF‑8 encoding.
+    Read up to *size* bytes from *fd*.
+
+    If *size* is ``-1`` (the default) the function reads until EOF, returning
+    all data as a single ``bytes`` object.
 
     Parameters
     ----------
-    file_path: str or pathlib.Path
-        Path to the file to be read.
+    fd: int
+        File descriptor to read from.
+    size: int, optional
+        Maximum number of bytes to read; ``-1`` means read until EOF.
 
     Returns
     -------
-    str
-        The file contents.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the file does not exist.
-    UnicodeDecodeError
-        If the file cannot be decoded as UTF‑8.
+    bytes
+        The data read from the descriptor.
     """
-    path = Path(file_path)
-    return path.read_text(encoding="utf-8")
+    if size == 0:
+        return b""
+    chunks: list[bytes] = []
+    remaining = size
+    while True:
+        to_read = 8192 if remaining == -1 else min(8192, remaining)
+        data = os.read(fd, to_read)
+        if not data:
+            break
+        chunks.append(data)
+        if remaining != -1:
+            remaining -= len(data)
+            if remaining <= 0:
+                break
+    return b"".join(chunks)
 
 
-def write_file(file_path: str | Path, content: str) -> None:
+def write_to_fd(fd: int, data: Union[bytes, bytearray, memoryview]) -> int:
     """
-    Write *content* to *file_path* using UTF‑8 encoding.
-
-    The parent directory is created automatically if it does not exist.
+    Write *data* to *fd*, ensuring that all bytes are written.
 
     Parameters
     ----------
-    file_path: str or pathlib.Path
-        Destination file path.
-    content: str
-        Text to write to the file.
+    fd: int
+        File descriptor to write to.
+    data: bytes‑like
+        The data to write.
+
+    Returns
+    -------
+    int
+        Total number of bytes written.
 
     Raises
     ------
     OSError
-        If the file cannot be written for any OS‑level reason.
+        If the underlying ``os.write`` fails.
     """
-    path = Path(file_path)
-    ensure_dir_exists(path.parent)
-    path.write_text(content, encoding="utf-8")
+    view = memoryview(data)
+    total_written = 0
+    while total_written < len(view):
+        written = os.write(fd, view[total_written:])
+        if written == 0:
+            raise OSError("os.write returned 0 bytes written, unable to continue")
+        total_written += written
+    return total_written
 
 
-__all__ = [
-    "ensure_dir_exists",
-    "list_files",
-    "read_file",
-    "write_file",
-]
+def close_fd(fd: int) -> None:
+    """
+    Close the file descriptor *fd* safely.
+
+    Parameters
+    ----------
+    fd: int
+        The descriptor to close.
+    """
+    try:
+        os.close(fd)
+    except OSError:
+        # Silently ignore errors on close – this mirrors the behaviour of
+        # ``file.close()`` which never raises on a second close.
+        pass
+
+
+def duplicate_fd(fd: int, inheritable: bool = False) -> int:
+    """
+    Duplicate *fd* using :func:`os.dup` and optionally set the inheritable flag.
+
+    Parameters
+    ----------
+    fd: int
+        File descriptor to duplicate.
+    inheritable: bool, optional
+        If ``True``, the duplicated descriptor will be marked as inheritable
+        by child processes (default ``False``).
+
+    Returns
+    -------
+    int
+        The new file

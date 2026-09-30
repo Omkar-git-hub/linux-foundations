@@ -1,5 +1,5 @@
 {
-    "current_day": 27,
+    "current_day": 28,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -54,9 +54,10 @@
         "Learn Linux System Information",
         "Create System Information Notes",
         "Learn Symbolic and Hard Links",
-        "Create Linux Links Notes"
+        "Create Linux Links Notes",
+        "Learn File Descriptors and Advanced I/O"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 54
+    "project_progress": 55
 }
