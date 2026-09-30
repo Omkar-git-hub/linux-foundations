@@ -1,127 +1,103 @@
 """
-Cron and Scheduled Jobs Utilities.
+Cron and Scheduled Jobs Notes
 
-This module provides simple helpers for constructing and parsing cron
-schedule lines. The helpers are intentionally lightweight and avoid
-external dependencies, making them suitable for inclusion in scripts
-or educational material.
+This module provides a concise reference for using `cron` to schedule
+recurring tasks on Unix-like systems. The notes are intended for quick
+look‑ups and can be used by the documentation generation utilities in
+the project.
 
-Typical usage::
+Typical usage:
 
-    from projects.linux_foundations.notes.cron import build_cron_schedule, parse_cron_line
+    from projects.linux_foundations.notes.cron import get_cron_notes
 
-    # Build a cron line that runs a backup script every day at 2:30 AM
-    line = build_cron_schedule(minute='30', hour='2',
-                               day_of_month='*', month='*',
-                               day_of_week='*',
-                               command='/usr/local/bin/backup.sh')
-    # line -> '30 2 * * * /usr/local/bin/backup.sh'
-
-    # Parse an existing cron line
-    info = parse_cron_line('0 0 * * 0 /usr/bin/weekly_report')
-    # info -> {
-    #     'minute': '0',
-    #     'hour': '0',
-    #     'day_of_month': '*',
-    #     'month': '*',
-    #     'day_of_week': '0',
-    #     'command': '/usr/bin/weekly_report'
-    # }
+    print(get_cron_notes())
 """
 
 from __future__ import annotations
 
-from typing import Dict
+__all__: list[str] = ["get_cron_notes"]
 
 
-def build_cron_schedule(
-    minute: str = "*",
-    hour: str = "*",
-    day_of_month: str = "*",
-    month: str = "*",
-    day_of_week: str = "*",
-    command: str = "",
-) -> str:
+def get_cron_notes() -> str:
     """
-    Construct a cron schedule line from its components.
+    Return a formatted string containing essential information about
+    cron syntax, common patterns, and best practices.
 
-    Parameters
-    ----------
-    minute : str, optional
-        Minute field (0‑59, ``*``, ``*/5`` etc.). Default ``"*"``
-    hour : str, optional
-        Hour field (0‑23). Default ``"*"``
-    day_of_month : str, optional
-        Day‑of‑month field (1‑31). Default ``"*"``
-    month : str, optional
-        Month field (1‑12). Default ``"*"``
-    day_of_week : str, optional
-        Day‑of‑week field (0‑7 where both 0 and 7 are Sunday). Default ``"*"``
-    command : str, optional
-        The command or script to execute. Empty string results in a schedule
-        without a command.
+    The returned string can be printed directly or written to a markdown
+    file for documentation purposes.
 
     Returns
     -------
     str
-        A single cron line suitable for inclusion in a crontab file.
-
-    Notes
-    -----
-    The function does **not** perform exhaustive validation of the
-    cron fields; it only ensures that each field is a non‑empty string.
-    For production use, consider stricter validation.
+        Multi‑line notes describing cron fields, special strings, environment
+        considerations, and example entries.
     """
-    # Basic sanity checks – ensure fields are provided as strings
-    fields = [minute, hour, day_of_month, month, day_of_week]
-    if not all(isinstance(f, str) and f for f in fields):
-        raise ValueError("All time fields must be non‑empty strings.")
-    if not isinstance(command, str):
-        raise ValueError("Command must be a string.")
+    notes = """# Cron and Scheduled Jobs
 
-    schedule = " ".join(fields)
-    if command:
-        schedule = f"{schedule} {command}"
-    return schedule
+## Overview
+`cron` is a time‑based job scheduler in Unix‑like operating systems.
+It allows you to run commands or scripts automatically at specified
+times, dates, or intervals.
 
+## Crontab Format
+A typical crontab line consists of six fields:
 
-def parse_cron_line(line: str) -> Dict[str, str]:
-    """
-    Parse a single cron line into its constituent parts.
+```
+┌───────────── minute (0 - 59)
+│ ┌─────────── hour (0 - 23)
+│ │ ┌───────── day of month (1 - 31)
+│ │ │ ┌─────── month (1 - 12)
+│ │ │ │ ┌───── day of week (0 - 6) (Sunday=0)
+│ │ │ │ │
+* * * * * command-to-execute
+```
 
-    Parameters
-    ----------
-    line : str
-        A cron line as it would appear in a crontab file. The line may
-        contain leading/trailing whitespace.
+- Use `*` to match any value.
+- Multiple values can be specified with commas (e.g., `1,15,30`).
+- Ranges are expressed with a hyphen (e.g., `9-17`).
+- Step values use a slash (e.g., `*/5` for every five units).
 
-    Returns
-    -------
-    dict
-        Mapping with keys ``minute``, ``hour``, ``day_of_month``,
-        ``month``, ``day_of_week`` and ``command``. The ``command`` entry
-        contains the remainder of the line after the five schedule fields,
-        stripped of leading whitespace.
+## Special Strings
+| String | Meaning                              |
+|--------|--------------------------------------|
+| `@reboot` | Run once at system startup          |
+| `@yearly` / `@annually` | Run once a year at midnight on Jan 1 |
+| `@monthly` | Run once a month at midnight on the 1st |
+| `@weekly` | Run once a week at midnight on Sunday |
+| `@daily` / `@midnight` | Run once a day at midnight |
+| `@hourly` | Run once an hour at the start of the hour |
 
-    Raises
-    ------
-    ValueError
-        If the line does not contain at least six whitespace‑separated
-        components (the five schedule fields plus a command).
-    """
-    if not isinstance(line, str):
-        raise TypeError("Cron line must be a string.")
-    parts = line.strip().split(None, 5)  # split on any whitespace, max 6 parts
-    if len(parts) < 6:
-        raise ValueError(
-            "Cron line must contain at least five schedule fields and a command."
-        )
-    minute, hour, day_of_month, month, day_of_week, command = parts
-    return {
-        "minute": minute,
-        "hour": hour,
-        "day_of_month": day_of_month,
-        "month": month,
-        "day_of_week": day_of_week,
-        "command": command,
-    }
+## Environment
+- The default shell is `/bin/sh`. Override with `SHELL=/bin/bash` at the top of the crontab.
+- Define environment variables (e.g., `PATH`, `HOME`) before the schedule lines.
+- Redirect output to avoid unwanted emails:
+  ```sh
+  * * * * * /path/to/script.sh >> /var/log/script.log 2>&1
+  ```
+
+## Common Examples
+```
+# Run a backup script every day at 02:30
+30 2 * * * /usr/local/bin/backup.sh
+
+# Clean /tmp every hour
+0 * * * * /usr/bin/find /tmp -type f -atime +1 -delete
+
+# Restart a service at reboot
+@reboot /usr/sbin/service myservice start
+```
+
+## Tips & Best Practices
+- Test commands manually before adding them to crontab.
+- Use absolute paths for binaries and files.
+- Keep crontab entries minimal; delegate complex logic to scripts.
+- Check the system’s cron log (`/var/log/cron` or `journalctl -u cron`) for troubleshooting.
+
+## Managing Crontabs
+- Edit the current user's crontab: `crontab -e`
+- List crontab entries: `crontab -l`
+- Remove crontab: `crontab -r`
+- System‑wide crontabs are located in `/etc/crontab` and `/etc/cron.d/`.
+
+"""
+    return notes
