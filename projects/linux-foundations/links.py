@@ -1,144 +1,85 @@
 """
-Utility functions for working with symbolic and hard links.
+Utility functions for working with filesystem links and special permissions.
 
-This module provides a small, cross‑platform API to:
-
-* Create symbolic and hard links.
-* Query whether a path is a symbolic link.
-* Determine if a path is a hard link (i.e. has more than one link count and
-  is not a symbolic link).
-* Retrieve the target of a symbolic link.
-* Get the link count (number of hard links) for a path.
-
-All functions accept ``str`` or :class:`pathlib.Path` objects and return
-``pathlib.Path`` instances where appropriate.
+This module provides helpers to inspect symbolic links as well as to query
+special permission bits (setuid, setgid, sticky) on any filesystem entry.
 """
 
-from __future__ import annotations
-
 import os
-from pathlib import Path
-from typing import Union
-
-PathLike = Union[str, Path]
+import stat
+from typing import List
 
 __all__ = [
-    "create_symlink",
-    "create_hardlink",
     "is_symlink",
-    "is_hardlink",
-    "get_link_target",
-    "get_hardlink_count",
+    "readlink",
+    "has_setuid",
+    "has_setgid",
+    "has_sticky",
+    "get_special_permissions",
 ]
 
-
-def _to_path(p: PathLike) -> Path:
-    """Coerce *p* to a :class:`~pathlib.Path`."""
-    return p if isinstance(p, Path) else Path(p)
-
-
-def create_symlink(
-    source: PathLike,
-    link_name: PathLike,
-    *,
-    target_is_directory: bool = False,
-) -> Path:
+def is_symlink(path: str) -> bool:
     """
-    Create a symbolic link pointing to *source* named *link_name*.
-
-    Parameters
-    ----------
-    source:
-        The path the symlink should point to. It may be absolute or relative.
-    link_name:
-        The path of the symlink to create.
-    target_is_directory:
-        Set to ``True`` when the target is a directory. Required on Windows
-        for correct link creation.
-
-    Returns
-    -------
-    pathlib.Path
-        The created symlink path.
+    Return ``True`` if *path* refers to a symbolic link.
     """
-    src = _to_path(source)
-    link = _to_path(link_name)
-
-    # pathlib's `symlink_to` handles the `target_is_directory` flag.
-    link.symlink_to(src, target_is_directory=target_is_directory)
-    return link
+    return os.path.islink(path)
 
 
-def create_hardlink(source: PathLike, link_name: PathLike) -> Path:
+def readlink(path: str) -> str:
     """
-    Create a hard link pointing to *source* named *link_name*.
+    Return the target of the symbolic link *path*.
 
-    Parameters
-    ----------
-    source:
-        Existing file to link to. Must be a regular file (directories cannot be
-        hard‑linked on most platforms).
-    link_name:
-        The path of the hard link to create.
-
-    Returns
-    -------
-    pathlib.Path
-        The created hard link path.
+    Raises ``OSError`` if *path* is not a symbolic link.
     """
-    src = _to_path(source)
-    link = _to_path(link_name)
-
-    # pathlib's `hardlink_to` is only available from Python 3.10.
-    # Fallback to os.link for earlier versions.
-    if hasattr(link, "hardlink_to"):
-        link.hardlink_to(src)
-    else:
-        os.link(src, link)
-    return link
+    return os.readlink(path)
 
 
-def is_symlink(path: PathLike) -> bool:
+def _mode(path: str) -> int:
     """
-    Return ``True`` if *path* is a symbolic link.
-
-    This works for both files and directories.
+    Return the mode bits of *path* using ``os.lstat`` (so that the link itself
+    is examined, not the target).
     """
-    p = _to_path(path)
-    return p.is_symlink()
+    return os.lstat(path).st_mode
 
 
-def is_hardlink(path: PathLike) -> bool:
+def has_setuid(path: str) -> bool:
     """
-    Return ``True`` if *path* is a hard link.
-
-    A path is considered a hard link when its link count (``st_nlink``) is
-    greater than 1 and it is **not** a symbolic link.
+    Return ``True`` if the set‑uid bit is set on *path*.
     """
-    p = _to_path(path)
-    if p.is_symlink():
-        return False
-    try:
-        return p.stat().st_nlink > 1
-    except FileNotFoundError:
-        return False
+    return bool(_mode(path) & stat.S_ISUID)
 
 
-def get_link_target(path: PathLike) -> Path | None:
+def has_setgid(path: str) -> bool:
     """
-    If *path* is a symbolic link, return the path it points to; otherwise ``None``.
+    Return ``True`` if the set‑gid bit is set on *path*.
     """
-    p = _to_path(path)
-    if p.is_symlink():
-        return p.readlink()
-    return None
+    return bool(_mode(path) & stat.S_ISGID)
 
 
-def get_hardlink_count(path: PathLike) -> int:
+def has_sticky(path: str) -> bool:
     """
-    Return the number of hard links pointing to *path*.
+    Return ``True`` if the sticky bit is set on *path*.
+    """
+    return bool(_mode(path) & stat.S_ISVTX)
 
-    For non‑existent paths a ``FileNotFoundError`` is raised.
+
+def get_special_permissions(path: str) -> List[str]:
     """
-    p = _to_path(path)
-    return p.stat().st_nlink
+    Return a list describing the special permission bits set on *path*.
+
+    The list may contain any of the following strings, in this order:
+
+    * ``"setuid"`` – set‑uid bit is set
+    * ``"setgid"`` – set‑gid bit is set
+    * ``"sticky"`` – sticky bit is set
+
+    If no special bits are set, an empty list is returned.
+    """
+    perms = []
+    if has_setuid(path):
+        perms.append("setuid")
+    if has_setgid(path):
+        perms.append("setgid")
+    if has_sticky(path):
+        perms.append("sticky")
+    return perms
