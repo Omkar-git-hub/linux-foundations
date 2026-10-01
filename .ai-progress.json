@@ -59,9 +59,10 @@
         "Create File Descriptors Notes",
         "Learn Special Permissions",
         "Create Special Permissions Notes",
-        "Learn Linux Security Basics"
+        "Learn Linux Security Basics",
+        "Create Linux Security Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 59
+    "project_progress": 60
 }

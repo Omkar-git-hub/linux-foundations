@@ -1,104 +1,70 @@
 """
-Linux Foundations Notes package.
+Linux Foundations – Notes Package
 
-This package aggregates various note modules that provide concise
-explanations and helper utilities for Linux concepts.
+This package aggregates various note modules for quick reference.
 """
 
-# Re-export note modules for convenient import.
-from .archives import *
-from .bash_scripting import *
-from .command_resolution import *
-from .cron import *
-from .curl_wget_ports_dns import *
-from .env_vars import *
-from .file_descriptors import *
-from .git import *
-from .links import *
-from .logs import *
-from .monitoring import *
-from .networking import *
-from .networking_tools import *
-from .package_management import *
-from .path import *
-from .pipes import *
-from .processes import *
-from .quoting import *
-from .scheduled_jobs import *
-from .services import *
-from .shell_control import *
-from .ssh import *
-from .std_io import *
-from .storage import *
-from .system_info import *
-from .text_processing import *
-from .users_groups_sudo import *
-from .virtual_env import *
-from .special_permissions import *
+# Export note functions for convenient import
+from .archives import archives_notes  # noqa: F401
+from .bash_scripting import bash_scripting_notes  # noqa: F401
+from .command_resolution import command_resolution_notes  # noqa: F401
+from .cron import cron_notes  # noqa: F401
+from .curl_wget_ports_dns import curl_wget_ports_dns_notes  # noqa: F401
+from .env_vars import env_vars_notes  # noqa: F401
+from .file_descriptors import file_descriptors_notes  # noqa: F401
+from .git import git_notes  # noqa: F401
+from .links import links_notes  # noqa: F401
+from .logs import logs_notes  # noqa: F401
+from .monitoring import monitoring_notes  # noqa: F401
+from .networking import networking_notes  # noqa: F401
+from .networking_tools import networking_tools_notes  # noqa: F401
+from .package_management import package_management_notes  # noqa: F401
+from .path import path_notes  # noqa: F401
+from .pipes import pipes_notes  # noqa: F401
+from .processes import processes_notes  # noqa: F401
+from .quoting import quoting_notes  # noqa: F401
+from .scheduled_jobs import scheduled_jobs_notes  # noqa: F401
+from .services import services_notes  # noqa: F401
+from .shell_control import shell_control_notes  # noqa: F401
+from .special_permissions import special_permissions_notes  # noqa: F401
+from .ssh import ssh_notes  # noqa: F401
+from .std_io import std_io_notes  # noqa: F401
+from .storage import storage_notes  # noqa: F401
+from .system_info import system_info_notes  # noqa: F401
+from .text_processing import text_processing_notes  # noqa: F401
+from .users_groups_sudo import users_groups_sudo_notes  # noqa: F401
+from .virtual_env import virtual_env_notes  # noqa: F401
+from .security import security_notes  # noqa: F401
 
-# Define the public API of the notes package.
 __all__ = [
-    # archives
-    "ARCHIVES",
-    # bash_scripting
-    "BASH_SCRIPTING",
-    # command_resolution
-    "COMMAND_RESOLUTION",
-    # cron
-    "CRON",
-    # curl_wget_ports_dns
-    "CURL_WGET_PORTS_DNS",
-    # env_vars
-    "ENV_VARS",
-    # file_descriptors
-    "FILE_DESCRIPTORS",
-    # git
-    "GIT",
-    # links
-    "LINKS",
-    # logs
-    "LOGS",
-    # monitoring
-    "MONITORING",
-    # networking
-    "NETWORKING",
-    # networking_tools
-    "NETWORKING_TOOLS",
-    # package_management
-    "PACKAGE_MANAGEMENT",
-    # path
-    "PATH",
-    # pipes
-    "PIPES",
-    # processes
-    "PROCESSES",
-    # quoting
-    "QUOTING",
-    # scheduled_jobs
-    "SCHEDULED_JOBS",
-    # services
-    "SERVICES",
-    # shell_control
-    "SHELL_CONTROL",
-    # ssh
-    "SSH",
-    # std_io
-    "STD_IO",
-    # storage
-    "STORAGE",
-    # system_info
-    "SYSTEM_INFO",
-    # text_processing
-    "TEXT_PROCESSING",
-    # users_groups_sudo
-    "USERS_GROUPS_SUDO",
-    # virtual_env
-    "VIRTUAL_ENV",
-    # special permissions
-    "SpecialPermission",
-    "SETUID",
-    "SETGID",
-    "STICKY",
-    "SPECIAL_PERMISSIONS",
-    "list_special_permissions",
+    "archives_notes",
+    "bash_scripting_notes",
+    "command_resolution_notes",
+    "cron_notes",
+    "curl_wget_ports_dns_notes",
+    "env_vars_notes",
+    "file_descriptors_notes",
+    "git_notes",
+    "links_notes",
+    "logs_notes",
+    "monitoring_notes",
+    "networking_notes",
+    "networking_tools_notes",
+    "package_management_notes",
+    "path_notes",
+    "pipes_notes",
+    "processes_notes",
+    "quoting_notes",
+    "scheduled_jobs_notes",
+    "services_notes",
+    "shell_control_notes",
+    "special_permissions_notes",
+    "ssh_notes",
+    "std_io_notes",
+    "storage_notes",
+    "system_info_notes",
+    "text_processing_notes",
+    "users_groups_sudo_notes",
+    "virtual_env_notes",
+    "security_notes",
 ]
