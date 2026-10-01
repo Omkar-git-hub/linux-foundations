@@ -57,9 +57,10 @@
         "Create Linux Links Notes",
         "Learn File Descriptors and Advanced I/O",
         "Create File Descriptors Notes",
-        "Learn Special Permissions"
+        "Learn Special Permissions",
+        "Create Special Permissions Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 57
+    "project_progress": 58
 }
