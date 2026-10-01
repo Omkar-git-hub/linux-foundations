@@ -61,9 +61,10 @@
         "Create Special Permissions Notes",
         "Learn Linux Security Basics",
         "Create Linux Security Notes",
-        "Learn Docker Fundamentals"
+        "Learn Docker Fundamentals",
+        "Create Docker Fundamentals Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 61
+    "project_progress": 62
 }
