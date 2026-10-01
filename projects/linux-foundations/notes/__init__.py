@@ -1,13 +1,19 @@
 """
-Linux Foundations Notes Package
-
-Exports note modules for easy access.
+Convenient imports for the ``projects.linux_foundations.notes`` package.
 """
 
-from .linux import get_notes as linux_notes
-from .github_actions import get_notes as github_actions_notes
+from .troubleshooting import (
+    check_service_status,
+    get_last_boot_time,
+    parse_dmesg_errors,
+    list_open_ports,
+    recent_syslog_entries,
+)
 
 __all__ = [
-    "linux_notes",
-    "github_actions_notes",
+    "check_service_status",
+    "get_last_boot_time",
+    "parse_dmesg_errors",
+    "list_open_ports",
+    "recent_syslog_entries",
 ]

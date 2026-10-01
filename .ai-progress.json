@@ -65,9 +65,10 @@
         "Create Docker Fundamentals Notes",
         "Learn Linux and GitHub Actions",
         "Create Linux and GitHub Actions Notes",
-        "Learn Linux Troubleshooting"
+        "Learn Linux Troubleshooting",
+        "Create Linux Troubleshooting Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 65
+    "project_progress": 66
 }
