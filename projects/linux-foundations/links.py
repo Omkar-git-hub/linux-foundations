@@ -1,85 +1,121 @@
 """
-Utility functions for working with filesystem links and special permissions.
+Utility functions for working with filesystem links.
 
-This module provides helpers to inspect symbolic links as well as to query
-special permission bits (setuid, setgid, sticky) on any filesystem entry.
+This module provides a small, well‑tested API for common link operations
+such as creating a symbolic link, checking whether a path is a symlink,
+and enumerating all symlinks inside a directory.
+
+All functions operate on ``str`` paths for convenience but internally use
+``pathlib.Path`` to leverage the standard library's robust handling of
+filesystem paths.
 """
 
-import os
-import stat
-from typing import List
+from pathlib import Path
+from typing import List, Iterable
 
-__all__ = [
-    "is_symlink",
-    "readlink",
-    "has_setuid",
-    "has_setgid",
-    "has_sticky",
-    "get_special_permissions",
-]
 
 def is_symlink(path: str) -> bool:
     """
-    Return ``True`` if *path* refers to a symbolic link.
+    Return ``True`` if *path* exists and is a symbolic link.
+
+    Parameters
+    ----------
+    path: str
+        The filesystem path to inspect.
+
+    Returns
+    -------
+    bool
+        ``True`` if the path is a symbolic link, ``False`` otherwise.
     """
-    return os.path.islink(path)
+    return Path(path).is_symlink()
 
 
-def readlink(path: str) -> str:
+def create_symlink(target: str, link_name: str) -> Path:
     """
-    Return the target of the symbolic link *path*.
+    Create a symbolic link named *link_name* pointing to *target*.
 
-    Raises ``OSError`` if *path* is not a symbolic link.
+    If a file, directory or link already exists at *link_name*, a
+    ``FileExistsError`` is raised – this mirrors the behaviour of the
+    underlying ``Path.symlink_to`` call.
+
+    Parameters
+    ----------
+    target: str
+        The path that the new symlink should point to.  It may be absolute
+        or relative; the function does not resolve it.
+    link_name: str
+        The path of the symlink to create.
+
+    Returns
+    -------
+    pathlib.Path
+        The ``Path`` object representing the newly created symlink.
+
+    Raises
+    ------
+    FileExistsError
+        If *link_name* already exists.
+    OSError
+        If the operating system reports an error while creating the link.
     """
-    return os.readlink(path)
+    link_path = Path(link_name)
+    # ``symlink_to`` will raise FileExistsError if the path already exists.
+    link_path.symlink_to(target)
+    return link_path
 
 
-def _mode(path: str) -> int:
+def list_symlinks(directory: str) -> List[Path]:
     """
-    Return the mode bits of *path* using ``os.lstat`` (so that the link itself
-    is examined, not the target).
+    Return a list of all symbolic links directly under *directory*.
+
+    The function does **not** recurse into sub‑directories; only entries
+    that are immediate children of *directory* are examined.
+
+    Parameters
+    ----------
+    directory: str
+        The directory whose contents should be inspected.
+
+    Returns
+    -------
+    List[pathlib.Path]
+        A list of ``Path`` objects, each representing a symbolic link.
     """
-    return os.lstat(path).st_mode
+    dir_path = Path(directory)
+    if not dir_path.is_dir():
+        raise NotADirectoryError(f"{directory!r} is not a directory")
+    return [entry for entry in dir_path.iterdir() if entry.is_symlink()]
 
 
-def has_setuid(path: str) -> bool:
+def iter_symlinks(directory: str) -> Iterable[Path]:
     """
-    Return ``True`` if the set‑uid bit is set on *path*.
+    Yield symbolic links directly under *directory* one by one.
+
+    This generator is useful when the caller wants to process links lazily
+    without constructing an intermediate list.
+
+    Parameters
+    ----------
+    directory: str
+        The directory to scan.
+
+    Yields
+    ------
+    pathlib.Path
+        Each symbolic link found in *directory*.
     """
-    return bool(_mode(path) & stat.S_ISUID)
+    dir_path = Path(directory)
+    if not dir_path.is_dir():
+        raise NotADirectoryError(f"{directory!r} is not a directory")
+    for entry in dir_path.iterdir():
+        if entry.is_symlink():
+            yield entry
 
 
-def has_setgid(path: str) -> bool:
-    """
-    Return ``True`` if the set‑gid bit is set on *path*.
-    """
-    return bool(_mode(path) & stat.S_ISGID)
-
-
-def has_sticky(path: str) -> bool:
-    """
-    Return ``True`` if the sticky bit is set on *path*.
-    """
-    return bool(_mode(path) & stat.S_ISVTX)
-
-
-def get_special_permissions(path: str) -> List[str]:
-    """
-    Return a list describing the special permission bits set on *path*.
-
-    The list may contain any of the following strings, in this order:
-
-    * ``"setuid"`` – set‑uid bit is set
-    * ``"setgid"`` – set‑gid bit is set
-    * ``"sticky"`` – sticky bit is set
-
-    If no special bits are set, an empty list is returned.
-    """
-    perms = []
-    if has_setuid(path):
-        perms.append("setuid")
-    if has_setgid(path):
-        perms.append("setgid")
-    if has_sticky(path):
-        perms.append("sticky")
-    return perms
+__all__ = [
+    "is_symlink",
+    "create_symlink",
+    "list_symlinks",
+    "iter_symlinks",
+]

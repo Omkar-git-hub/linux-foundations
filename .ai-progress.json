@@ -1,5 +1,5 @@
 {
-    "current_day": 30,
+    "current_day": 31,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -60,9 +60,10 @@
         "Learn Special Permissions",
         "Create Special Permissions Notes",
         "Learn Linux Security Basics",
-        "Create Linux Security Notes"
+        "Create Linux Security Notes",
+        "Learn Docker Fundamentals"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 60
+    "project_progress": 61
 }
