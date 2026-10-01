@@ -63,9 +63,10 @@
         "Create Linux Security Notes",
         "Learn Docker Fundamentals",
         "Create Docker Fundamentals Notes",
-        "Learn Linux and GitHub Actions"
+        "Learn Linux and GitHub Actions",
+        "Create Linux and GitHub Actions Notes"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 63
+    "project_progress": 64
 }
