@@ -1,5 +1,5 @@
 {
-    "current_day": 32,
+    "current_day": 33,
     "completed_tasks": [
         "Learn Linux Fundamentals",
         "Create Linux Fundamentals Notes",
@@ -64,9 +64,10 @@
         "Learn Docker Fundamentals",
         "Create Docker Fundamentals Notes",
         "Learn Linux and GitHub Actions",
-        "Create Linux and GitHub Actions Notes"
+        "Create Linux and GitHub Actions Notes",
+        "Learn Linux Troubleshooting"
     ],
     "completed_commits": 0,
     "last_commit": "",
-    "project_progress": 64
+    "project_progress": 65
 }
